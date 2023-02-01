@@ -2,7 +2,7 @@ import {
 	IInsightFacade,
 	InsightDatasetKind,
 	InsightError,
-	InsightResult,
+	InsightResult, NotFoundError,
 	ResultTooLargeError
 } from "../../src/controller/IInsightFacade";
 import InsightFacade from "../../src/controller/InsightFacade";
@@ -11,6 +11,7 @@ import {folderTest} from "@ubccpsc310/folder-test";
 import {expect, use} from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {clearDisk, getContentFromArchives} from "../TestUtil";
+import {beforeEach} from "mocha";
 
 use(chaiAsPromised);
 
@@ -100,5 +101,409 @@ describe("InsightFacade", function () {
 				},
 			}
 		);
+	});
+});
+
+
+describe("InsightFacade j8u2b", function() {
+	describe("addDataset", function() {
+		let sections: string;
+		let facade: InsightFacade;
+
+		before(function() {
+			sections = getContentFromArchives("pair.zip");
+		});
+
+		beforeEach(function() {
+			clearDisk();
+			facade = new InsightFacade();
+		});
+
+		it("should reject with an empty dataset id", function(){
+			const result = facade.addDataset("",sections,InsightDatasetKind.Sections);
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+
+		it("should add valid dataset", function(){
+			const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			return expect(result).to.eventually.deep.equal(["valid"]);
+		});
+
+		it("should reject duplicate ids", async function(){
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			try {
+				await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+				expect.fail("Should have rejected!");
+			} catch(err){
+				expect(err).to.be.instanceof(InsightError);
+			}
+		});
+
+		it("should add three valid datasets", async function(){
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			await facade.addDataset("validtwo",sections,InsightDatasetKind.Sections);
+			const result = await facade.addDataset("validthree",sections,InsightDatasetKind.Sections);
+			return expect(result).to.deep.equal(["valid","validtwo","validthree"]);
+		});
+
+		it("should reject with rooms kind", function() {
+			const result = facade.addDataset("_", sections,InsightDatasetKind.Rooms);
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+	});
+
+	describe("removeDataset", function() {
+		let sections: string;
+		let facade: InsightFacade;
+
+		before(function() {
+			sections = getContentFromArchives("small.zip");
+		});
+
+		beforeEach(function() {
+			clearDisk();
+			facade = new InsightFacade();
+		});
+
+		it("should remove", async function(){
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			const result = await facade.removeDataset("valid");
+			return expect(result).to.deep.equal("valid");
+		});
+
+		it("should reject with id not in facade and throw NotFoundError", async function(){
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			try {
+				await facade.removeDataset("validd");
+				expect.fail("Should have rejected!");
+			} catch(err){
+				expect(err).to.be.instanceof(NotFoundError);
+			}
+			// return expect(result).to.eventually.be.rejectedWith(NotFoundError);
+		});
+
+		it("should reject with an whitespace", async function(){
+			try{
+				await facade.removeDataset("");
+				expect.fail("Should have rejected!");
+			} catch(err) {
+				expect(err).to.be.instanceof(InsightError);
+			}
+			// return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+
+		it("should reject with an whitespace 2", async function(){
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			try {
+				await facade.removeDataset("");
+				expect.fail("Should have rejected!");
+			} catch(err) {
+				expect(err).to.be.instanceof(InsightError);
+			}
+			// return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+	});
+
+	describe("listDatasets", function() {
+		let sections: string;
+		let facade: InsightFacade;
+
+		before(function() {
+			sections = getContentFromArchives("pair.zip");
+		});
+
+		beforeEach(function() {
+			clearDisk();
+			facade = new InsightFacade();
+		});
+
+		it("empty facade", function(){
+			const result = facade.listDatasets();
+			return expect(result).to.eventually.deep.equal([]);
+		});
+
+		it("one dataset in facade", async function(){
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			const result = await facade.listDatasets();
+			return expect(result).to.deep.equal([{
+				id: "valid",
+				kind: InsightDatasetKind.Sections,
+				numRows: 64612
+			}]);
+		});
+
+		it("two dataset in facade", async function(){
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			await facade.addDataset("validtwo",sections,InsightDatasetKind.Sections);
+			const result = await facade.listDatasets();
+			return expect(result).to.deep.equal([{
+				id: "valid",
+				kind: InsightDatasetKind.Sections,
+				numRows: 64612
+			}, {
+				id: "validtwo",
+				kind: InsightDatasetKind.Sections,
+				numRows: 64612
+			}]);
+		});
+	});
+
+	describe("performquery", function () {
+		let sections: string;
+		let facade: InsightFacade;
+
+		before(async function() {
+			sections = getContentFromArchives("pair.zip");
+			facade = new InsightFacade();
+			await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
+		});
+
+		// beforeEach(function() {
+		//     clearDisk();
+		//     facade = new InsightFacade();
+		// });
+
+
+		const query1: unknown = {
+			WHERE: {
+				AND:[
+					{GT:{sections_avg:94.8}},
+					{IS:{sections_dept:"cpsc"}}
+				]
+			},
+			OPTIONS: {
+				COLUMNS: [
+					"sections_dept",
+					"sections_id",
+					"sections_avg"
+				],
+				ORDER: "sections_avg"
+			}
+		};
+
+		const query2: unknown = {
+			WHERE: {
+				AND:[
+					{GT:{sections_avg:"94.8"}},
+					{IS:{sections_dept:"cpsc"}}
+				]
+			},
+			OPTIONS: {
+				COLUMNS: [
+					"sections_dept",
+					"sections_id",
+					"sections_avg"
+				],
+				ORDER: "sections_avg"
+			}
+		};
+
+		const query3: unknown = {
+			WHERE: {
+				GT: {
+					sections_avg: 50
+				}
+			},
+			OPTIONS: {
+				COLUMNS: [
+					"sections_dept",
+					"sections_id",
+					"sections_avg"
+				],
+				ORDER: "sections_avg"
+			}
+		};
+
+		const query4: unknown = {
+			WHERE: {
+				OR:[
+					{EQ:{sections_avg:94.8}},
+					{IS:{sections_dept:"cpsc"}}
+				]
+			},
+			OPTIONS: {
+				COLUMNS: [
+					"sections_dept",
+					"sections_id",
+					"sections_uuid",
+					"sections_instructor",
+					"sections_title",
+					"sections_year",
+					"sections_pass",
+					"sections_audit",
+					"sections_fail"
+				],
+				ORDER: "sections_avg"
+			}
+		};
+
+		const query5: unknown = {
+			WHERE: {
+				OR:[
+					{AND:[{IS:{sections_dept: "cpsc"}},
+						{LT:{sections_pass: 3}}]},
+					{EQ:{sections_avg:94.8}}
+				]
+			},
+			OPTIONS: {
+				COLUMNS: [
+					"sections_dept",
+					"sections_avg",
+					"sections_year",
+					"sections_pass",
+					"sections_audit",
+					"sections_fail"
+				],
+				ORDER: "sections_avg"
+			}
+		};
+
+		const query6: unknown = {
+			WHERE: {
+				NOT: {NOT: {IS: {sections_instructor: "kiczales, gregor"}}}
+			},
+			OPTIONS: {
+				COLUMNS: [
+					"sections_dept",
+					"sections_id",
+					"sections_avg"
+				],
+				ORDER: "sections_avg"
+			}
+		};
+
+		const query7: unknown = {
+			WHERE: {
+				AND :[
+					{AND:[{LT:{sections_avg: 89.5}},
+						{GT:{sections_avg: 89}}]},
+					{OR:[
+						{IS:{sections_dept:"*nj"}},
+						{IS:{sections_dept:"z*"}}]}
+				]
+			},
+			OPTIONS: {
+				COLUMNS: [
+					"sections_dept",
+					"sections_id",
+					"sections_avg"
+				],
+				ORDER: "sections_avg"
+			}
+		};
+
+		it("should reject empty dataset", async function() {
+			let newfacade: InsightFacade;
+			newfacade = new InsightFacade();
+			const result = await newfacade.performQuery(query1);
+			return expect(result).to.be.instanceof(InsightError);
+		});
+
+		it("should work with query 1", async function() {
+			// await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
+			const result = await facade.performQuery(query1);
+			return expect(result).to.deep.equal([
+				{sections_dept:"cpsc",sections_id:"589",sections_avg:95},
+				{sections_dept:"cpsc",sections_id:"589",sections_avg:95}
+			]);
+		});
+
+		it("should reject sections_avg:string", async function() {
+			// await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
+			try {
+				await facade.performQuery(query2);
+				expect.fail("Should have rejected!");
+			} catch(err) {
+				expect(err).to.be.instanceof(InsightError);
+			}
+			// const result = facade.performQuery(query2);
+			// return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+
+		it("should throw ResultTooLargeError", async function() {
+			// let allsections = getContentFromArchives("pair.zip");
+			// await facade.addDataset("sections",allsections,InsightDatasetKind.Sections);
+			try {
+				await facade.performQuery(query3);
+				expect.fail("Should have rejected!");
+			} catch(err) {
+				expect(err).to.be.instanceof(ResultTooLargeError);
+			}
+			// const result = facade.performQuery(query3);
+			// return expect(result).to.eventually.be.rejectedWith(ResultTooLargeError);
+		});
+
+		it("should reject because order key is not in column", async function() {
+			// await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
+			try {
+				await facade.performQuery(query4);
+				expect.fail("Should have rejected!");
+			} catch(err) {
+				expect(err).to.be.instanceof(InsightError);
+			}
+			// const result = facade.performQuery(query4);
+			// return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+
+		it("should work with query 5", async function() {
+			// await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
+			// const result = await facade.performQuery(query5);
+			// return expect(result).to.deep.equal([
+			//     {"sections_dept":"cpsc","sections_avg":75,"sections_year":2012,"sections_pass":1,"sections_audit":0,"sections_fail":0},
+			//     {"sections_dept":"cpsc","sections_avg":80,"sections_year":1900,"sections_pass":2,"sections_audit":0,"sections_fail":0},
+			//     {"sections_dept":"cpsc","sections_avg":80,"sections_year":2009,"sections_pass":2,"sections_audit":0,"sections_fail":0},
+			//     {"sections_dept":"cpsc","sections_avg":85,"sections_year":2015,"sections_pass":1,"sections_audit":0,"sections_fail":0},
+			//     {"sections_dept":"cpsc","sections_avg":86.5,"sections_year":1900,"sections_pass":2,"sections_audit":0,"sections_fail":0},
+			//     {"sections_dept":"cpsc","sections_avg":87,"sections_year":1900,"sections_pass":1,"sections_audit":0,"sections_fail":0},
+			//     {"sections_dept":"cpsc","sections_avg":87,"sections_year":2013,"sections_pass":1,"sections_audit":0,"sections_fail":0},
+			//     {"sections_dept":"epse","sections_avg":94.8,"sections_year":2010,"sections_pass":5,"sections_audit":0,"sections_fail":0},
+			//     {"sections_dept":"cpsc","sections_avg":95,"sections_year":1900,"sections_pass":1,"sections_audit":0,"sections_fail":0},
+			//     {"sections_dept":"cpsc","sections_avg":95,"sections_year":2014,"sections_pass":1,"sections_audit":0,"sections_fail":0}
+			// ]);
+			try {
+				await facade.performQuery(query5);
+				expect.fail("Should have rejected!");
+			} catch(err) {
+				expect(err).to.be.instanceof(InsightError);
+			}
+
+		});
+
+		it("should work with double negation", async function() {
+			// await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
+			const result = await facade.performQuery(query6);
+			return expect(result).to.deep.equal([
+				{sections_dept:"cpsc",sections_id:"110",sections_year:2009,sections_avg:72.58},
+				{sections_dept:"cpsc",sections_id:"110",sections_year:2009,sections_avg:71.4},
+				{sections_dept:"cpsc",sections_id:"110",sections_year:2010,sections_avg:76.98},
+				{sections_dept:"cpsc",sections_id:"110",sections_year:2010,sections_avg:70.75},
+				{sections_dept:"cpsc",sections_id:"110",sections_year:2011,sections_avg:77.11},
+				{sections_dept:"cpsc",sections_id:"110",sections_year:2011,sections_avg:73.53},
+				{sections_dept:"cpsc",sections_id:"110",sections_year:2011,sections_avg:77.69},
+				{sections_dept:"cpsc",sections_id:"110",sections_year:2012,sections_avg:74.24},
+				{sections_dept:"cpsc",sections_id:"110",sections_year:2012,sections_avg:77.43},
+				{sections_dept:"cpsc",sections_id:"110",sections_year:2013,sections_avg:70.11},
+				{sections_dept:"cpsc",sections_id:"110",sections_year:2014,sections_avg:85.11},
+				{sections_dept:"cpsc",sections_id:"110",sections_year:2014,sections_avg:73.13},
+				{sections_dept:"cpsc",sections_id:"110",sections_year:2014,sections_avg:71.07},
+				{sections_dept:"cpsc",sections_id:"110",sections_year:2015,sections_avg:84.91},
+				{sections_dept:"cpsc",sections_id:"110",sections_year:2015,sections_avg:70.78}
+			]);
+
+		});
+
+		it("tests wildcards", async function() {
+			// await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
+			const result = await facade.performQuery(query7);
+			return expect(result).to.deep.equal([
+				{sections_dept:"punj",sections_id:"102",sections_avg:89.08},
+				{sections_dept:"punj",sections_id:"102",sections_avg:89.08},
+				{sections_dept:"zool",sections_id:"549",sections_avg:89.17},
+				{sections_dept:"zool",sections_id:"549",sections_avg:89.27},
+				{sections_dept:"zool",sections_id:"503",sections_avg:89.45},
+				{sections_dept:"zool",sections_id:"503",sections_avg:89.45}
+			]);
+		});
+
 	});
 });
