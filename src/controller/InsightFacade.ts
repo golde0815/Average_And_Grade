@@ -6,9 +6,14 @@ import {
 	InsightResult,
 	NotFoundError
 } from "./IInsightFacade";
+
+import {Dataset} from "./Dataset";
+
 import JSZip from "jszip";
 
 import fs from "fs-extra";
+import {Course} from "./Course";
+import {Section} from "./Section";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -16,7 +21,9 @@ import fs from "fs-extra";
  *
  */
 export default class InsightFacade implements IInsightFacade {
+	private datasets: Dataset[];
 	constructor() {
+		this.datasets = [];
 		console.log("InsightFacadeImpl::init()");
 	}
 
@@ -25,38 +32,41 @@ export default class InsightFacade implements IInsightFacade {
 			if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
 				reject(new InsightError("Invalid ID"));
 			}
-			let rows = 0;
-			JSZip.loadAsync(content, {base64: true})
+			let zip = new JSZip();
+			zip.loadAsync(content, {base64: true})
 				.then(() => {
-					if (JSZip.folder("./data/") === null) {
+					if (zip.folder("./courses/") === null) {
 						reject(new InsightError("Invalid content"));
 					}
-					JSZip.folder("./data/")?.forEach(() => {
-						console.log("A");
+					let dataset = new Dataset(id, kind);
+					zip.folder("./courses/")?.forEach((relativePath, file) => {
+						console.log(relativePath);
+						file.async("string")
+							.then((text) => {
+								let courseData = JSON.parse(text);
+								let sections: Section[];
+								sections = [];
+								for (const secData of courseData.result) {
+									let section = new Section(secData.id, secData.Course, secData.Title,
+										secData.Professor, secData.Subject, secData.Year, secData.Avg, secData.Pass,
+										secData.Fail, secData.Audit);
+									sections.push(section);
+								}
+								dataset.addCourse(new Course(sections));
+							}).catch(() => {
+								reject(new InsightError("Invalid course content"));
+							});
 					});
 				}).catch(() => {
 					reject(new InsightError("Invalid content"));
+				}).then(() => {
+					fs.writeFile("./data" + id + ".json", this.datasets, (err: InsightError) => {
+						if (err) {
+							reject(new InsightError("Error adding file"));
+						}
+					});
+					resolve([]);
 				});
-			let metadata: InsightDataset;
-			metadata = {
-				id: id,
-				kind: InsightDatasetKind.Sections,
-				numRows: 2
-			};
-			let data = {
-				metadata: metadata,
-				database: content
-			};
-			fs.writeFile("./data" + id + ".json", data, (err: InsightError) => {
-				if (err) {
-					reject(new InsightError("Error adding file"));
-				}
-
-				let allDatabases: string[];
-				allDatabases = [];
-				resolve(allDatabases);
-			});
-			resolve([]);
 		});
 	}
 
