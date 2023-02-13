@@ -16,7 +16,10 @@ function gtController(query: any, data: any): any {
 	const field = gtKey.substring(9);
 	console.log("In numberFields:",(numberFields.find((element) => element === field)));
 	if ((numberFields.find((element) => element === field)) === undefined) {
-		throw new InsightError("Invalid field");
+		throw new InsightError("Invalid field in GT");
+	}
+	if (typeof gtValue !== "number") {
+		throw new InsightError("Invalid type in GT");
 	}
 	const filteredData = data.filter(function (eachData: any){
 		if (eachData[field] > gtValue) {

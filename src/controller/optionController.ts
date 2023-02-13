@@ -1,7 +1,13 @@
 import InsightFacade from "./InsightFacade";
-import {InsightResult} from "./IInsightFacade";
+import {InsightError, InsightResult} from "./IInsightFacade";
 
 function optionController(query: any, data: any): InsightResult[] {
+	const validFields: string[] = ["uuid","id","title","instructor","dept","year","avg","pass","fail","audit"];
+	for (const indices in query.COLUMNS) {
+		if (validFields.find((element) => element === query.COLUMNS[indices].substring(9)) === undefined) {
+			throw new InsightError("Invalid keys in COLUMNS");
+		}
+	}
 	console.log("data[0]: ", data[0]);
 	console.log("inside column: ", query.COLUMNS);
 	console.log("first column element: ", query.COLUMNS[0]);

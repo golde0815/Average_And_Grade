@@ -16,7 +16,10 @@ function ltController(query: any, data: any): any {
 	const field = ltKey.substring(9);
 	console.log("In numberFields:",(numberFields.find((element) => element === field)));
 	if ((numberFields.find((element) => element === field)) === undefined) {
-		return Promise.reject(new InsightError("Invalid field"));
+		throw new InsightError("Invalid field in LT");
+	}
+	if (typeof ltValue !== "number") {
+		throw new InsightError("Invalid type in LT");
 	}
 	const filteredData = data.filter(function (eachData: any){
 		if (eachData[field] < ltValue) {

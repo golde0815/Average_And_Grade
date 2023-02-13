@@ -16,7 +16,10 @@ function eqController(query: any, data: any): any {
 	const field = eqKey.substring(9);
 	console.log("In numberFields:",(numberFields.find((element) => element === field)));
 	if ((numberFields.find((element) => element === field)) === undefined) {
-		throw new InsightError("Invalid field");
+		throw new InsightError("Invalid field in EQ");
+	}
+	if (typeof eqValue !== "number") {
+		throw new InsightError("Invalid type in EQ");
 	}
 	const filteredData = data.filter(function (eachData: any){
 		if (eachData[field] === eqValue) {
