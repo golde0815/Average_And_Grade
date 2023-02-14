@@ -26,19 +26,19 @@ export default class InsightFacade implements IInsightFacade {
 		this.datasets = [];
 		console.log("InsightFacadeImpl::init()");
 	}
-
+	// Write tests, write to data directory
 	public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
 		return new Promise<string[]>((resolve, reject) => {
 			if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
 				reject(new InsightError("Invalid ID"));
 			}
 			let zip = new JSZip();
+			let dataset = new Dataset(id, kind);
 			zip.loadAsync(content, {base64: true})
 				.then(() => {
 					if (zip.folder("./courses/") === null) {
 						reject(new InsightError("Invalid content"));
 					}
-					let dataset = new Dataset(id, kind);
 					zip.folder("./courses/")?.forEach((relativePath, file) => {
 						console.log(relativePath);
 						file.async("string")
@@ -56,16 +56,24 @@ export default class InsightFacade implements IInsightFacade {
 							}).catch(() => {
 								reject(new InsightError("Invalid course content"));
 							});
+						this.datasets.push(dataset);
 					});
 				}).catch(() => {
 					reject(new InsightError("Invalid content"));
 				}).then(() => {
-					fs.writeFile("./data" + id + ".json", this.datasets, (err: InsightError) => {
+					// implement writing file to disk
+					let datasetString = JSON.stringify(dataset);
+					fs.writeFile("./data" + id + ".json", datasetString, (err: InsightError) => {
 						if (err) {
 							reject(new InsightError("Error adding file"));
 						}
 					});
-					resolve([]);
+					let output: string[] = [];
+					for (const x of this.datasets) {
+						let datasetId = x.getID();
+						output.push(datasetId);
+					}
+					resolve(output);
 				});
 		});
 	}
