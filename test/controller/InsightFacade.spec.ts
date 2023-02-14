@@ -56,6 +56,46 @@ describe("InsightFacade", function () {
 			const result = facade.addDataset("", sections, InsightDatasetKind.Sections);
 			return expect(result).to.eventually.be.rejectedWith(InsightError);
 		});
+		it("should reject a id that is all whitespace, mix of spaces tabs and breaks", function () {
+			const result = facade.addDataset("         \n\n", sections, InsightDatasetKind.Sections);
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+		it("should reject a id that is all spaces", function () {
+			const result = facade.addDataset("      ", sections, InsightDatasetKind.Sections);
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+		it("should reject a id that is all tabs", function () {
+			const result = facade.addDataset("           ", sections, InsightDatasetKind.Sections);
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+		it("should reject a id that is all breaks", function () {
+			const result = facade.addDataset("\n\n\n\n\n", sections, InsightDatasetKind.Sections);
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+		it("should reject a id that is blank", function () {
+			const result = facade.addDataset("", sections, InsightDatasetKind.Sections);
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+		it("should add valid dataset", function(){
+			const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			return expect(result).to.eventually.deep.equal(["valid"]);
+		});
+		it("should reject duplicate ids", async function(){
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			try {
+				await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+				expect.fail("Should have rejected!");
+			} catch(err){
+				expect(err).to.be.instanceof(InsightError);
+			}
+		});
+
+		it("should add three valid datasets", async function(){
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			await facade.addDataset("validtwo",sections,InsightDatasetKind.Sections);
+			const result = await facade.addDataset("validthree",sections,InsightDatasetKind.Sections);
+			return expect(result).to.deep.equal(["valid","validtwo","validthree"]);
+		});
 	});
 
 	/*

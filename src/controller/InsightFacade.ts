@@ -32,6 +32,8 @@ export default class InsightFacade implements IInsightFacade {
 			if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
 				reject(new InsightError("Invalid ID"));
 			}
+			// reject rooms kind
+			// reject duplicate id
 			let zip = new JSZip();
 			let dataset = new Dataset(id, kind);
 			zip.loadAsync(content, {base64: true})
@@ -56,14 +58,14 @@ export default class InsightFacade implements IInsightFacade {
 							}).catch(() => {
 								reject(new InsightError("Invalid course content"));
 							});
-						this.datasets.push(dataset);
 					});
 				}).catch(() => {
 					reject(new InsightError("Invalid content"));
 				}).then(() => {
 					// implement writing file to disk
+					this.datasets.push(dataset);
 					let datasetString = JSON.stringify(dataset);
-					fs.writeFile("./data" + id + ".json", datasetString, (err: InsightError) => {
+					fs.writeFile("./data/" + id + ".json", datasetString, (err: InsightError) => {
 						if (err) {
 							reject(new InsightError("Error adding file"));
 						}
