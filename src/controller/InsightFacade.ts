@@ -1,19 +1,10 @@
-import {
-	IInsightFacade,
-	InsightDataset,
-	InsightDatasetKind,
-	InsightError,
-	InsightResult,
-	NotFoundError
-} from "./IInsightFacade";
+import {IInsightFacade, InsightDataset, InsightDatasetKind, InsightError, InsightResult} from "./IInsightFacade";
 
 import {Dataset} from "./Dataset";
 
 import JSZip from "jszip";
 
 import fs from "fs-extra";
-import {Course} from "./Course";
-import {Section} from "./Section";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -31,41 +22,38 @@ export default class InsightFacade implements IInsightFacade {
 		return new Promise<string[]>((resolve, reject) => {
 			if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
 				reject(new InsightError("Invalid ID"));
+			} else if (kind === InsightDatasetKind.Rooms) {
+				reject(new InsightError("Invalid Type"));
 			}
-			// reject rooms kind
-			// reject duplicate id
+			for (const x of this.datasets) {
+				if (id === x.getID()) {
+					reject(new InsightError("Duplicate ID"));
+				}
+			}
 			let zip = new JSZip();
 			let dataset = new Dataset(id, kind);
-			zip.loadAsync(content, {base64: true})
+			return zip.loadAsync(content, {base64: true})
 				.then(() => {
-					if (zip.folder("./courses/") === null) {
-						reject(new InsightError("Invalid content"));
+					if (zip.folder("courses/") === null) {
+						reject(new InsightError("Invalid content (no courses)"));
 					}
-					zip.folder("./courses/")?.forEach((relativePath, file) => {
-						console.log(relativePath);
-						file.async("string")
+					let promises: Array<Promise<void>> = [];
+					zip.folder("courses/")?.forEach((relativePath, file) => {
+						let coursePromise: Promise<void> = file.async("string")
 							.then((text) => {
-								let courseData = JSON.parse(text);
-								let sections: Section[];
-								sections = [];
-								for (const secData of courseData.result) {
-									let section = new Section(secData.id, secData.Course, secData.Title,
-										secData.Professor, secData.Subject, secData.Year, secData.Avg, secData.Pass,
-										secData.Fail, secData.Audit);
-									sections.push(section);
-								}
-								dataset.addCourse(new Course(sections));
+								dataset.addCourse(text);
 							}).catch(() => {
 								reject(new InsightError("Invalid course content"));
 							});
+						promises.push(coursePromise);
 					});
+					return Promise.all(promises);
 				}).catch(() => {
 					reject(new InsightError("Invalid content"));
-				}).then(() => {
-					// implement writing file to disk
+				}).then(() => { // implement writing file to disk
 					this.datasets.push(dataset);
 					let datasetString = JSON.stringify(dataset);
-					fs.writeFile("./data/" + id + ".json", datasetString, (err: InsightError) => {
+					fs.writeFile("./data" + id + ".json", datasetString, (err: InsightError) => {
 						if (err) {
 							reject(new InsightError("Error adding file"));
 						}
