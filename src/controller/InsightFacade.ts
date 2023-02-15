@@ -5,7 +5,6 @@ import {
 	InsightError,
 	InsightResult, ResultTooLargeError
 } from "./IInsightFacade";
-import andController from "./andController";
 import isController from "./isController";
 import eqController from "./eqController";
 import gtController from "./gtController";
@@ -34,47 +33,56 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
-		// return new Promise<string[]>((resolve, reject) => {
-		// 	if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
-		// 		throw new InsightError("Invalid ID");
-		// 	}
-		// 	let zip = new JSZip();
-		// 	zip.loadAsync(content, {base64: true})
-		// 		.then(() => {
-		// 			if (zip.folder("./courses/") === null) {
-		// 				throw new InsightError("Invalid content");
-		// 			}
-		// 			let dataset = new Dataset(id, kind);
-		// 			zip.folder("./courses/")?.forEach((relativePath, file) => {
-		// 				console.log(relativePath);
-		// 				file.async("string")
-		// 					.then((text) => {
-		// 						let courseData = JSON.parse(text);
-		// 						let sections: Section[];
-		// 						sections = [];
-		// 						for (const secData of courseData.result) {
-		// 							let section = new Section(secData.id, secData.Course, secData.Title,
-		// 								secData.Professor, secData.Subject, secData.Year, secData.Avg, secData.Pass,
-		// 								secData.Fail, secData.Audit);
-		// 							sections.push(section);
-		// 						}
-		// 						dataset.addCourse(new Course(sections));
-		// 					}).catch(() => {
-		// 						throw new InsightError("Invalid course content");
-		// 					});
-		// 			});
-		// 		}).catch(() => {
-		// 			throw new InsightError("Invalid content");
-		// 		}).then(() => {
-		// 			fs.writeFile("./data" + id + ".json", this.datasets, (err: InsightError) => {
-		// 				if (err) {
-		// 					throw new InsightError("Error adding file");
-		// 				}
-		// 			});
-		// 			resolve([]);
-		// 		});
-		// });
-		return Promise.resolve([]);
+		return new Promise<string[]>((resolve, reject) => {
+			if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
+				reject(new InsightError("Invalid ID"));
+			}
+			let zip = new JSZip();
+			let dataset = new Dataset(id, kind);
+			zip.loadAsync(content, {base64: true})
+				.then(() => {
+					if (zip.folder("./courses/") === null) {
+						reject(new InsightError("Invalid content"));
+					}
+					zip.folder("./courses/")?.forEach((relativePath, file) => {
+						console.log(relativePath);
+						file.async("string")
+							.then((text) => {
+								let courseData = JSON.parse(text);
+								let sections: Section[];
+								sections = [];
+								for (const secData of courseData.result) {
+									let section = new Section(secData.id, secData.Course, secData.Title,
+										secData.Professor, secData.Subject, secData.Year, secData.Avg, secData.Pass,
+										secData.Fail, secData.Audit);
+									sections.push(section);
+								}
+								dataset.addCourse(new Course(sections));
+							}).catch(() => {
+								reject(new InsightError("Invalid course content"));
+							});
+						console.log("this part is not running properly");
+					});
+				}).catch(() => {
+					reject(new InsightError("Invalid content"));
+				}).then(() => {
+				// implement writing file to disk
+					this.datasets.push(dataset);
+					let datasetString = JSON.stringify(dataset);
+					fs.writeFile("./data" + id + ".json", datasetString, (err: InsightError) => {
+						if (err) {
+							reject(new InsightError("Error adding file"));
+						}
+					});
+					let output: string[] = [];
+					for (const x of this.datasets) {
+						let datasetId = x.getID();
+						output.push(datasetId);
+					}
+					resolve(output);
+				});
+		});
+		// return Promise.resolve([]);
 	}
 
 	public removeDataset(id: string): Promise<string> {
@@ -144,6 +152,7 @@ export default class InsightFacade implements IInsightFacade {
 	}
 	public performQuery(query: unknown): Promise<InsightResult[]> {
 		const anyQuery: any = query;
+		let data: any = mockData;
 		if (anyQuery == null) {
 			return Promise.reject(new InsightError("Invalid query (null)"));
 		}
@@ -157,17 +166,17 @@ export default class InsightFacade implements IInsightFacade {
 		return new Promise<InsightResult[]>((resolve, reject) => {
 			try{
 				const whereStatement = anyQuery.WHERE;
-				console.log("Inside WHERE:", anyQuery.WHERE);
+				// console.log("Inside WHERE:", anyQuery.WHERE);
 				if (Object.keys(whereStatement).length !== 1) {
 					throw new InsightError("WHERE can only have one key");
 				}
 				let filteredData: any;
-				filteredData = this.processWhere(whereStatement, mockData);
+				filteredData = this.processWhere(whereStatement, data);
 				if (filteredData.length > 5000) {
 					throw new ResultTooLargeError("More than 5000 results");
 				}
 				let finalData: InsightResult[];
-				console.log("filteredData: ", filteredData);
+				// console.log("filteredData: ", filteredData);
 				const optionStatement = anyQuery.OPTIONS;
 				this.validateOptions(optionStatement);
 				finalData = optionController(optionStatement, filteredData);

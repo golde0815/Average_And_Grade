@@ -54,7 +54,7 @@ function isController(query: any, data: any): any {
 	const isKey = Object.keys(query)[0];
 	const isValue = query[isKey];
 	const field = isKey.substring(9);
-	console.log("In stringFields:",(stringFields.find((element) => element === field)));
+	// console.log("In stringFields:",(stringFields.find((element) => element === field)));
 	if ((stringFields.find((element) => element === field)) === undefined) {
 		throw new InsightError("Invalid field in IS");
 	}

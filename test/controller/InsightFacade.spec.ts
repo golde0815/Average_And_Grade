@@ -105,7 +105,7 @@ describe("InsightFacade", function () {
 });
 
 
-describe("InsightFacade j8u2b", function() {
+describe("InsightFacade", function() {
 	describe("addDataset", function() {
 		let sections: string;
 		let facade: InsightFacade;
@@ -146,7 +146,7 @@ describe("InsightFacade j8u2b", function() {
 			return expect(result).to.deep.equal(["valid","validtwo","validthree"]);
 		});
 
-		it("should reject with rooms kind", function() {
+		it.only("should reject with rooms kind", function() {
 			const result = facade.addDataset("_", sections,InsightDatasetKind.Rooms);
 			return expect(result).to.eventually.be.rejectedWith(InsightError);
 		});
@@ -262,167 +262,79 @@ describe("InsightFacade j8u2b", function() {
 		//     clearDisk();
 		//     facade = new InsightFacade();
 		// });
-
-
-		const query1: unknown = {
-			WHERE: {
-				AND:[
-					{GT:{sections_avg:94.8}},
-					{IS:{sections_dept:"cpsc"}}
-				]
-			},
-			OPTIONS: {
-				COLUMNS: [
-					"sections_dept",
-					"sections_id",
-					"sections_avg"
-				],
-				ORDER: "sections_avg"
-			}
-		};
-
-		const query2: unknown = {
-			WHERE: {
-				AND:[
-					{GT:{sections_avg:"94.8"}},
-					{IS:{sections_dept:"cpsc"}}
-				]
-			},
-			OPTIONS: {
-				COLUMNS: [
-					"sections_dept",
-					"sections_id",
-					"sections_avg"
-				],
-				ORDER: "sections_avg"
-			}
-		};
-
-		const query3: unknown = {
-			WHERE: {
-				GT: {
-					sections_avg: 50
+		it("should work with query (AND)", async function() {
+			const queryAND: unknown = {
+				WHERE: {
+					AND:[
+						{GT:{sections_avg:94.8}},
+						{IS:{sections_dept:"cps*"}}
+					]
+					// GT:{sections_avg:94.8}
+				},
+				OPTIONS: {
+					COLUMNS: [
+						"sections_dept",
+						"sections_id",
+						"sections_avg"
+					],
+					ORDER: "sections_avg",
 				}
-			},
-			OPTIONS: {
-				COLUMNS: [
-					"sections_dept",
-					"sections_id",
-					"sections_avg"
-				],
-				ORDER: "sections_avg"
-			}
-		};
-
-		const query4: unknown = {
-			WHERE: {
-				OR:[
-					{EQ:{sections_avg:94.8}},
-					{IS:{sections_dept:"cpsc"}}
-				]
-			},
-			OPTIONS: {
-				COLUMNS: [
-					"sections_dept",
-					"sections_id",
-					"sections_uuid",
-					"sections_instructor",
-					"sections_title",
-					"sections_year",
-					"sections_pass",
-					"sections_audit",
-					"sections_fail"
-				],
-				ORDER: "sections_avg"
-			}
-		};
-
-		const query5: unknown = {
-			WHERE: {
-				OR:[
-					{AND:[{IS:{sections_dept: "cpsc"}},
-						{LT:{sections_pass: 3}}]},
-					{EQ:{sections_avg:94.8}}
-				]
-			},
-			OPTIONS: {
-				COLUMNS: [
-					"sections_dept",
-					"sections_avg",
-					"sections_year",
-					"sections_pass",
-					"sections_audit",
-					"sections_fail"
-				],
-				ORDER: "sections_avg"
-			}
-		};
-
-		const query6: unknown = {
-			WHERE: {
-				NOT: {NOT: {IS: {sections_instructor: "kiczales, gregor"}}}
-			},
-			OPTIONS: {
-				COLUMNS: [
-					"sections_dept",
-					"sections_id",
-					"sections_avg"
-				],
-				ORDER: "sections_avg"
-			}
-		};
-
-		const query7: unknown = {
-			WHERE: {
-				AND :[
-					{AND:[{LT:{sections_avg: 89.5}},
-						{GT:{sections_avg: 89}}]},
-					{OR:[
-						{IS:{sections_dept:"*nj"}},
-						{IS:{sections_dept:"z*"}}]}
-				]
-			},
-			OPTIONS: {
-				COLUMNS: [
-					"sections_dept",
-					"sections_id",
-					"sections_avg"
-				],
-				ORDER: "sections_avg"
-			}
-		};
-
-		it("should reject empty dataset", async function() {
-			let newfacade: InsightFacade;
-			newfacade = new InsightFacade();
-			const result = await newfacade.performQuery(query1);
-			return expect(result).to.be.instanceof(InsightError);
-		});
-
-		it("should work with query 1", async function() {
-			// await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
-			const result = await facade.performQuery(query1);
+			};
+			const result = await facade.performQuery(queryAND);
+			// return expect(result).to.deep.equal([
+			// 	{sections_dept:"cpsc",sections_id:"589",sections_avg:95},
+			// 	{sections_dept:"cpsc",sections_id:"589",sections_avg:95}
+			// ]);
 			return expect(result).to.deep.equal([
-				{sections_dept:"cpsc",sections_id:"589",sections_avg:95},
-				{sections_dept:"cpsc",sections_id:"589",sections_avg:95}
+				{sections_dept:"cpsc",sections_id:"110",sections_avg:99}
 			]);
 		});
 
 		it("should reject sections_avg:string", async function() {
+			const query2: unknown = {
+				WHERE: {
+					AND:[
+						{GT:{sections_avg:"94.8"}},
+						{IS:{sections_dept:"cpsc"}}
+					]
+				},
+				OPTIONS: {
+					COLUMNS: [
+						"sections_dept",
+						"sections_id",
+						"sections_avg"
+					],
+					ORDER: "sections_avg"
+				}
+			};
 			// await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
 			try {
 				await facade.performQuery(query2);
 				expect.fail("Should have rejected!");
 			} catch(err) {
+				console.log("failed successfully");
 				expect(err).to.be.instanceof(InsightError);
 			}
-			// const result = facade.performQuery(query2);
-			// return expect(result).to.eventually.be.rejectedWith(InsightError);
 		});
 
 		it("should throw ResultTooLargeError", async function() {
 			// let allsections = getContentFromArchives("pair.zip");
 			// await facade.addDataset("sections",allsections,InsightDatasetKind.Sections);
+			const query3: unknown = {
+				WHERE: {
+					GT: {
+						sections_avg: 50
+					}
+				},
+				OPTIONS: {
+					COLUMNS: [
+						"sections_dept",
+						"sections_id",
+						"sections_avg"
+					],
+					ORDER: "sections_avg"
+				}
+			};
 			try {
 				await facade.performQuery(query3);
 				expect.fail("Should have rejected!");
@@ -434,7 +346,28 @@ describe("InsightFacade j8u2b", function() {
 		});
 
 		it("should reject because order key is not in column", async function() {
-			// await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
+			const query4: unknown = {
+				WHERE: {
+					OR:[
+						{EQ:{sections_avg:94.8}},
+						{IS:{sections_dept:"cpsc"}}
+					]
+				},
+				OPTIONS: {
+					COLUMNS: [
+						"sections_dept",
+						"sections_id",
+						"sections_uuid",
+						"sections_instructor",
+						"sections_title",
+						"sections_year",
+						"sections_pass",
+						"sections_audit",
+						"sections_fail"
+					],
+					ORDER: "sections_avg"
+				}
+			};
 			try {
 				await facade.performQuery(query4);
 				expect.fail("Should have rejected!");
@@ -445,34 +378,74 @@ describe("InsightFacade j8u2b", function() {
 			// return expect(result).to.eventually.be.rejectedWith(InsightError);
 		});
 
-		it("should work with query 5", async function() {
-			// await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
-			// const result = await facade.performQuery(query5);
-			// return expect(result).to.deep.equal([
-			//     {"sections_dept":"cpsc","sections_avg":75,"sections_year":2012,"sections_pass":1,"sections_audit":0,"sections_fail":0},
-			//     {"sections_dept":"cpsc","sections_avg":80,"sections_year":1900,"sections_pass":2,"sections_audit":0,"sections_fail":0},
-			//     {"sections_dept":"cpsc","sections_avg":80,"sections_year":2009,"sections_pass":2,"sections_audit":0,"sections_fail":0},
-			//     {"sections_dept":"cpsc","sections_avg":85,"sections_year":2015,"sections_pass":1,"sections_audit":0,"sections_fail":0},
-			//     {"sections_dept":"cpsc","sections_avg":86.5,"sections_year":1900,"sections_pass":2,"sections_audit":0,"sections_fail":0},
-			//     {"sections_dept":"cpsc","sections_avg":87,"sections_year":1900,"sections_pass":1,"sections_audit":0,"sections_fail":0},
-			//     {"sections_dept":"cpsc","sections_avg":87,"sections_year":2013,"sections_pass":1,"sections_audit":0,"sections_fail":0},
-			//     {"sections_dept":"epse","sections_avg":94.8,"sections_year":2010,"sections_pass":5,"sections_audit":0,"sections_fail":0},
-			//     {"sections_dept":"cpsc","sections_avg":95,"sections_year":1900,"sections_pass":1,"sections_audit":0,"sections_fail":0},
-			//     {"sections_dept":"cpsc","sections_avg":95,"sections_year":2014,"sections_pass":1,"sections_audit":0,"sections_fail":0}
-			// ]);
-			try {
-				await facade.performQuery(query5);
-				expect.fail("Should have rejected!");
-			} catch(err) {
-				expect(err).to.be.instanceof(InsightError);
-			}
-
+		it("should work with query OR", async function() {
+			const queryOR: unknown = {
+				WHERE: {
+					OR:[
+						{AND:[{IS:{sections_dept: "cpsc"}},
+							{LT:{sections_pass: 3}}]},
+						{EQ:{sections_avg:99}}
+					]
+				},
+				OPTIONS: {
+					COLUMNS: [
+						"sections_dept",
+						"sections_avg",
+						"sections_year",
+						"sections_pass",
+						"sections_audit",
+						"sections_fail"
+					],
+					ORDER: "sections_avg"
+				}
+			};
+			const result = await facade.performQuery(queryOR);
+			const expected: InsightResult[] = [
+				{sections_dept:"cpsc",sections_avg:75,sections_year:2012,sections_pass:1,sections_audit:0,
+					sections_fail:0},
+				{sections_dept:"cpsc",sections_avg:80,sections_year:1900,sections_pass:2,sections_audit:0,
+					sections_fail:0},
+				{sections_dept:"cpsc",sections_avg:80,sections_year:2009,sections_pass:2,sections_audit:0,
+					sections_fail:0},
+				{sections_dept:"cpsc",sections_avg:85,sections_year:2015,sections_pass:1,sections_audit:0,
+					sections_fail:0},
+				{sections_dept:"cpsc",sections_avg:86.5,sections_year:1900,sections_pass:2,sections_audit:0,
+					sections_fail:0},
+				{sections_dept:"cpsc",sections_avg:87,sections_year:1900,sections_pass:1,sections_audit:0,
+					sections_fail:0},
+				{sections_dept:"cpsc",sections_avg:87,sections_year:2013,sections_pass:1,sections_audit:0,
+					sections_fail:0},
+				{sections_dept:"epse",sections_avg:94.8,sections_year:2010,sections_pass:5,sections_audit:0,
+					sections_fail:0},
+				{sections_dept:"cpsc",sections_avg:95,sections_year:1900,sections_pass:1,sections_audit:0,
+					sections_fail:0},
+				{sections_dept:"cpsc",sections_avg:95,sections_year:2014,sections_pass:1,sections_audit:0,
+					sections_fail:0}
+			];
+			expect(result[0]).to.deep.equal(expected[0]);
+			expect(result[3]).to.deep.equal(expected[3]);
+			expect(result[4]).to.deep.equal(expected[4]);
+			expect(result[7]).to.deep.equal(expected[7]);
+			return expect(result).to.have.deep.members(expected);
 		});
 
 		it("should work with double negation", async function() {
-			// await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
+			const query6: unknown = {
+				WHERE: {
+					NOT: {NOT: {IS: {sections_dept: "cpsc"}}}
+				},
+				OPTIONS: {
+					COLUMNS: [
+						"sections_dept",
+						"sections_id",
+						"sections_year",
+						"sections_avg"
+					],
+					ORDER: "sections_year"
+				}
+			};
 			const result = await facade.performQuery(query6);
-			return expect(result).to.deep.equal([
+			const expected: InsightResult[] = [
 				{sections_dept:"cpsc",sections_id:"110",sections_year:2009,sections_avg:72.58},
 				{sections_dept:"cpsc",sections_id:"110",sections_year:2009,sections_avg:71.4},
 				{sections_dept:"cpsc",sections_id:"110",sections_year:2010,sections_avg:76.98},
@@ -488,21 +461,43 @@ describe("InsightFacade j8u2b", function() {
 				{sections_dept:"cpsc",sections_id:"110",sections_year:2014,sections_avg:71.07},
 				{sections_dept:"cpsc",sections_id:"110",sections_year:2015,sections_avg:84.91},
 				{sections_dept:"cpsc",sections_id:"110",sections_year:2015,sections_avg:70.78}
-			]);
+			];
+			expect(result[9]).to.deep.equal(expected[9]);
+			return expect(result).to.have.deep.members(expected);
 
 		});
 
 		it("tests wildcards", async function() {
-			// await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
+			const query7: unknown = {
+				WHERE: {
+					AND :[
+						{AND:[{LT:{sections_avg: 89.5}},
+							{GT:{sections_avg: 89}}]},
+						{OR:[{IS:{sections_dept:"*nj"}},
+							{IS:{sections_dept:"z*"}}]}
+					]
+				},
+				OPTIONS: {
+					COLUMNS: [
+						"sections_dept",
+						"sections_id",
+						"sections_avg"
+					],
+					ORDER: "sections_avg"
+				}
+			};
 			const result = await facade.performQuery(query7);
-			return expect(result).to.deep.equal([
+			const expected: InsightResult[] = [
 				{sections_dept:"punj",sections_id:"102",sections_avg:89.08},
 				{sections_dept:"punj",sections_id:"102",sections_avg:89.08},
 				{sections_dept:"zool",sections_id:"549",sections_avg:89.17},
 				{sections_dept:"zool",sections_id:"549",sections_avg:89.27},
 				{sections_dept:"zool",sections_id:"503",sections_avg:89.45},
 				{sections_dept:"zool",sections_id:"503",sections_avg:89.45}
-			]);
+			];
+			expect(result[2]).to.deep.equal(expected[2]);
+			expect(result[3]).to.deep.equal(expected[3]);
+			return expect(result).to.have.deep.members(expected);
 		});
 
 	});

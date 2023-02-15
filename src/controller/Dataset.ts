@@ -17,4 +17,8 @@ export class Dataset implements InsightDataset{
 		this.courses.push(course);
 		this.numRows += course.getRows();
 	}
+
+	public getID() {
+		return this.id;
+	}
 }
