@@ -12,6 +12,8 @@ import {expect, use} from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {clearDisk, getContentFromArchives} from "../TestUtil";
 import {beforeEach} from "mocha";
+import * as fs from "fs";
+import path from "path";
 
 use(chaiAsPromised);
 
@@ -56,6 +58,46 @@ describe("InsightFacade", function () {
 		it ("should reject with  an empty dataset id", function() {
 			const result = facade.addDataset("", sections, InsightDatasetKind.Sections);
 			return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+		it("should reject a id that is all whitespace, mix of spaces tabs and breaks", function () {
+			const result = facade.addDataset("         \n\n", sections, InsightDatasetKind.Sections);
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+		it("should reject a id that is all spaces", function () {
+			const result = facade.addDataset("      ", sections, InsightDatasetKind.Sections);
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+		it("should reject a id that is all tabs", function () {
+			const result = facade.addDataset("           ", sections, InsightDatasetKind.Sections);
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+		it("should reject a id that is all breaks", function () {
+			const result = facade.addDataset("\n\n\n\n\n", sections, InsightDatasetKind.Sections);
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+		it("should reject a id that is blank", function () {
+			const result = facade.addDataset("", sections, InsightDatasetKind.Sections);
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+		it("should add valid dataset", function(){
+			const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			return expect(result).to.eventually.deep.equal(["valid"]);
+		});
+		it("should reject duplicate ids", async function(){
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			try {
+				await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+				expect.fail("Should have rejected!");
+			} catch(err){
+				expect(err).to.be.instanceof(InsightError);
+			}
+		});
+
+		it("should add three valid datasets", async function(){
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			await facade.addDataset("validtwo",sections,InsightDatasetKind.Sections);
+			const result = await facade.addDataset("validthree",sections,InsightDatasetKind.Sections);
+			return expect(result).to.deep.equal(["valid","validtwo","validthree"]);
 		});
 	});
 
@@ -115,8 +157,23 @@ describe("InsightFacade", function() {
 		});
 
 		beforeEach(function() {
-			clearDisk();
+			// clearDisk();
 			facade = new InsightFacade();
+		});
+
+		after(function() {
+			fs.readdir("./data", (err, files) => {
+				if (err) {
+					throw err;
+				}
+				for (const file of files) {
+					fs.unlink(path.join("./data", file), (error) => {
+						if (error) {
+							throw error;
+						}
+					});
+				}
+			});
 		});
 
 		it("should reject with an empty dataset id", function(){
@@ -131,12 +188,8 @@ describe("InsightFacade", function() {
 
 		it("should reject duplicate ids", async function(){
 			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
-			try {
-				await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
-				expect.fail("Should have rejected!");
-			} catch(err){
-				expect(err).to.be.instanceof(InsightError);
-			}
+			const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
 		});
 
 		it("should add three valid datasets", async function(){
@@ -146,7 +199,7 @@ describe("InsightFacade", function() {
 			return expect(result).to.deep.equal(["valid","validtwo","validthree"]);
 		});
 
-		it.only("should reject with rooms kind", function() {
+		it("should reject with rooms kind", function() {
 			const result = facade.addDataset("_", sections,InsightDatasetKind.Rooms);
 			return expect(result).to.eventually.be.rejectedWith(InsightError);
 		});
@@ -257,11 +310,6 @@ describe("InsightFacade", function() {
 			facade = new InsightFacade();
 			await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
 		});
-
-		// beforeEach(function() {
-		//     clearDisk();
-		//     facade = new InsightFacade();
-		// });
 		it("should work with query (AND)", async function() {
 			const queryAND: unknown = {
 				WHERE: {
@@ -281,13 +329,13 @@ describe("InsightFacade", function() {
 				}
 			};
 			const result = await facade.performQuery(queryAND);
-			// return expect(result).to.deep.equal([
-			// 	{sections_dept:"cpsc",sections_id:"589",sections_avg:95},
-			// 	{sections_dept:"cpsc",sections_id:"589",sections_avg:95}
-			// ]);
 			return expect(result).to.deep.equal([
-				{sections_dept:"cpsc",sections_id:"110",sections_avg:99}
+				{sections_dept:"cpsc",sections_id:"589",sections_avg:95},
+				{sections_dept:"cpsc",sections_id:"589",sections_avg:95}
 			]);
+			// return expect(result).to.deep.equal([
+			// 	{sections_dept:"cpsc",sections_id:"110",sections_avg:99}
+			// ]);
 		});
 
 		it("should reject sections_avg:string", async function() {
@@ -467,7 +515,7 @@ describe("InsightFacade", function() {
 
 		});
 
-		it("tests wildcards", async function() {
+		it.only("tests wildcards", async function() {
 			const query7: unknown = {
 				WHERE: {
 					AND :[

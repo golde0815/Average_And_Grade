@@ -8,9 +8,6 @@ function optionController(query: any, data: any): InsightResult[] {
 			throw new InsightError("Invalid keys in COLUMNS");
 		}
 	}
-	// console.log("data[0]: ", data[0]);
-	// console.log("inside column: ", query.COLUMNS);
-	// console.log("first column element: ", query.COLUMNS[0]);
 	let result: InsightResult[] = [];
 	let numOfColumnKey = query.COLUMNS.length;
 	// console.log("in Columns: ", numOfColumnKey);

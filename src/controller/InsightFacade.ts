@@ -14,9 +14,7 @@ import ltController from "./ltController";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const mockData = require("./data");
 import {Dataset} from "./Dataset";
-
 import JSZip from "jszip";
-
 import fs from "fs-extra";
 import {Course} from "./Course";
 import {Section} from "./Section";
@@ -26,67 +24,82 @@ import {Section} from "./Section";
  *
  */
 export default class InsightFacade implements IInsightFacade {
-	private datasets: Dataset[];
+	private datasets: any;
 	constructor() {
-		this.datasets = [];
+		this.datasets = {};
 		console.log("InsightFacadeImpl::init()");
 	}
-
+	// Write tests, write to data directory
 	public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
 		return new Promise<string[]>((resolve, reject) => {
 			if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
 				reject(new InsightError("Invalid ID"));
+			} else if (kind === InsightDatasetKind.Rooms) {
+				reject(new InsightError("Invalid Type"));
 			}
-			let zip = new JSZip();
-			let dataset = new Dataset(id, kind);
-			zip.loadAsync(content, {base64: true})
+			if (this.datasets[id]) {
+				reject(new InsightError("Duplicate ID"));
+			}
+			let zip = new JSZip(), dataset = new Dataset(id, kind);
+			return zip.loadAsync(content, {base64: true})
 				.then(() => {
-					if (zip.folder("./courses/") === null) {
-						reject(new InsightError("Invalid content"));
+					if (zip.folder("courses/") === null) {
+						reject(new InsightError("Invalid content (no courses)"));
 					}
-					zip.folder("./courses/")?.forEach((relativePath, file) => {
-						console.log(relativePath);
-						file.async("string")
+					let promises: Array<Promise<void>> = [];
+					zip.folder("courses/")?.forEach((relativePath, file) => {
+						let coursePromise: Promise<void> = file.async("string")
 							.then((text) => {
-								let courseData = JSON.parse(text);
-								let sections: Section[];
-								sections = [];
-								for (const secData of courseData.result) {
-									let section = new Section(secData.id, secData.Course, secData.Title,
-										secData.Professor, secData.Subject, secData.Year, secData.Avg, secData.Pass,
-										secData.Fail, secData.Audit);
-									sections.push(section);
-								}
-								dataset.addCourse(new Course(sections));
+								dataset.addCourse(text);
 							}).catch(() => {
 								reject(new InsightError("Invalid course content"));
 							});
-						console.log("this part is not running properly");
+						promises.push(coursePromise);
 					});
+					return Promise.all(promises);
 				}).catch(() => {
 					reject(new InsightError("Invalid content"));
-				}).then(() => {
-				// implement writing file to disk
-					this.datasets.push(dataset);
+				}).then(() => { // implement writing file to disk
+					this.datasets[id] = dataset;
 					let datasetString = JSON.stringify(dataset);
-					fs.writeFile("./data" + id + ".json", datasetString, (err: InsightError) => {
+					if (!fs.existsSync("./data")) {
+						fs.mkdir("./data");
+					}
+					fs.writeFile("./data/" + id + ".json", datasetString, (err: InsightError) => {
 						if (err) {
 							reject(new InsightError("Error adding file"));
 						}
 					});
-					let output: string[] = [];
-					for (const x of this.datasets) {
-						let datasetId = x.getID();
-						output.push(datasetId);
-					}
-					resolve(output);
+					resolve(Object.keys(this.datasets));
 				});
 		});
-		// return Promise.resolve([]);
 	}
 
 	public removeDataset(id: string): Promise<string> {
 		return Promise.resolve("Not implemented.");
+	}
+	public andController(query: any, data: any): any {
+		if (query.length !== 2) {
+			throw new InsightError("There should be only two sub-queries for AND");
+		}
+		data = this.processWhere(query[0], data);
+		data = this.processWhere(query[1], data);
+		return data;
+	}
+	public orController(query: any, data: any): any {
+		if (query.length !== 2) {
+			throw new InsightError("There should be only two sub-queries for OR");
+		}
+		const processedDataFirst = this.processWhere(query[0], data);
+		let mergedSet = new Set();
+		if (processedDataFirst.length > 0) {
+			processedDataFirst.forEach((eachData: any) => mergedSet.add(eachData));
+		}
+		const processedDataSecond = this.processWhere(query[1], data);
+		if (processedDataSecond.length > 0) {
+			processedDataSecond.forEach((eachData: any) => mergedSet.add(eachData));
+		}
+		return Array.from(mergedSet);
 	}
 	public processWhere(whereStatement: any, filteredData: any) {
 		let processedData: any = filteredData;
@@ -95,20 +108,10 @@ export default class InsightFacade implements IInsightFacade {
 			throw new InsightError("Invalid key in where");
 		}
 		if (whereStatement.AND) {
-			if (whereStatement.AND.length !== 2) {
-				throw new InsightError("There should be only two sub-queries for AND");
-			}
-			processedData = this.processWhere(whereStatement.AND[0], filteredData);
-			processedData = this.processWhere(whereStatement.AND[1], processedData);
+			processedData = this.andController(whereStatement.AND, processedData);
 		}
 		if (whereStatement.OR) {
-			if (whereStatement.OR.length !== 2) {
-				throw new InsightError("There should be only two sub-queries for OR");
-			}
-			processedData = this.processWhere(whereStatement.OR[0], filteredData);
-			if (processedData.length === 0) {
-				processedData = this.processWhere(whereStatement.OR[1], filteredData);
-			}
+			processedData = this.orController(whereStatement.OR, processedData);
 		}
 		if (whereStatement.NOT) {
 			if (Object.keys(whereStatement.NOT).length !== 1) {
@@ -150,9 +153,15 @@ export default class InsightFacade implements IInsightFacade {
 		}
 		return;
 	}
+	public findID(query: any): string {
+		if(query.OPTIONS.COLUMNS && Array.isArray(query.OPTIONS.COLUMNS) && query.OPTIONS.COLUMNS.length > 0) {
+			return query.OPTIONS.COLUMNS[0].split("_")[0];
+		}
+		return "";
+	}
 	public performQuery(query: unknown): Promise<InsightResult[]> {
 		const anyQuery: any = query;
-		let data: any = mockData;
+		let courseData: any = this.datasets;
 		if (anyQuery == null) {
 			return Promise.reject(new InsightError("Invalid query (null)"));
 		}
@@ -162,7 +171,16 @@ export default class InsightFacade implements IInsightFacade {
 		if (Object.keys(anyQuery).length !== 2) {
 			return Promise.reject(new InsightError("Query should only contain two statements"));
 		}
-
+		const id: string = this.findID(anyQuery);
+		if (!id) {
+			return Promise.reject(new InsightError("Invalid key"));
+		}
+		let data: any[] = [];
+		courseData[id].courses.forEach((eachData: any) => {
+			if (eachData[id].length > 0) {
+				data = data.concat(eachData[id]);
+			}
+		});
 		return new Promise<InsightResult[]>((resolve, reject) => {
 			try{
 				const whereStatement = anyQuery.WHERE;
