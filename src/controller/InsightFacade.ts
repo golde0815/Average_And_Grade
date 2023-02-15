@@ -11,8 +11,6 @@ import gtController from "./gtController";
 import optionController from "./optionController";
 import orderController from "./orderController";
 import ltController from "./ltController";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const mockData = require("./data");
 import {Dataset} from "./Dataset";
 import JSZip from "jszip";
 import fs from "fs-extra";
