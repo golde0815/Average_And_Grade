@@ -14,6 +14,7 @@ export class Dataset implements InsightDataset{
 		this.courses = [];
 		this.numRows = 0;
 	}
+
 	public addCourse(text: string) {
 		let courseData = JSON.parse(text);
 		let sections: Section[];
@@ -27,9 +28,5 @@ export class Dataset implements InsightDataset{
 		let course = new Course(sections);
 		this.courses.push(course);
 		this.numRows += course.getRows();
-	}
-
-	public getID() {
-		return this.id;
 	}
 }

@@ -4,6 +4,7 @@
  * You should not change this interface at all or the test suite will not work.
  */
 
+
 export enum InsightDatasetKind {
 	Sections = "sections",
 	Rooms = "rooms",
