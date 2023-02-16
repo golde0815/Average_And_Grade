@@ -1,0 +1,39 @@
+{
+	"title": "eq",
+	"input": {
+		"WHERE": {
+			"EQ": {
+				"sections_avg": 97
+			}
+		},
+		"OPTIONS": {
+			"COLUMNS": [
+				"sections_uuid",
+				"sections_instructor",
+				"sections_dept",
+				"sections_avg"
+			]
+		}
+	},
+	"errorExpected": false,
+	"expected": [
+		{
+			"sections_uuid": "26255",
+			"sections_instructor": "campbell, deborah",
+			"sections_dept": "crwr",
+			"sections_avg": 97
+		},
+		{
+			"sections_uuid": "76310",
+			"sections_instructor": "amaral, deborah;ford, laurie",
+			"sections_dept": "epse",
+			"sections_avg": 97
+		},
+		{
+			"sections_uuid": "54846",
+			"sections_instructor": "",
+			"sections_dept": "psyc",
+			"sections_avg": 97
+		}
+	]
+}

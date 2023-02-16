@@ -1,0 +1,21 @@
+{
+	"title": "Empty where",
+	"input": {
+		"WHERE": {},
+		"OPTIONS": {
+			"COLUMNS": [
+				"sections_uuid",
+				"sections_id",
+				"sections_dept",
+				"sections_avg",
+				"sections_year",
+				"sections_pass",
+				"sections_audit",
+				"sections_fail"
+			],
+			"ORDER": "sections_avg"
+		}
+	},
+	"errorExpected": true,
+	"expected": "ResultTooLargeError"
+}

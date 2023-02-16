@@ -94,7 +94,6 @@ export default class InsightFacade implements IInsightFacade {
 				});
 		});
 	}
-
 	public removeDataset(id: string): Promise<string> {
 		if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
 			return Promise.reject(new InsightError("Invalid ID"));
@@ -169,14 +168,19 @@ export default class InsightFacade implements IInsightFacade {
 		return processedData;
 	}
 	public validateOptions(optionStatement: any) {
-		if (!optionStatement.COLUMNS || !optionStatement.ORDER) {
-			throw new InsightError("Invalid key in OPTIONS");
-		}
-		if (Object.keys(optionStatement).length !== 2) {
-			throw new InsightError("OPTIONS should only contain two statements");
-		}
-		if ((optionStatement.COLUMNS.find((element: string) => element === optionStatement.ORDER)) === undefined) {
-			throw new InsightError("ORDER Key must be in Columns");
+		if (Object.keys(optionStatement).length === 1) {
+			if (!optionStatement.COLUMNS) {
+				throw new InsightError("Invalid key in OPTIONS");
+			}
+		} else if (Object.keys(optionStatement).length === 2) {
+			if (!optionStatement.COLUMNS || !optionStatement.ORDER) {
+				throw new InsightError("Invalid key in OPTIONS");
+			}
+			if ((optionStatement.COLUMNS.find((element: string) => element === optionStatement.ORDER)) === undefined) {
+				throw new InsightError("ORDER Key must be in Columns");
+			}
+		} else {
+			throw new InsightError("OPTIONS should only contain one or two statements");
 		}
 		return;
 	}
@@ -211,12 +215,14 @@ export default class InsightFacade implements IInsightFacade {
 		return new Promise<InsightResult[]>((resolve, reject) => {
 			try{
 				const whereStatement = anyQuery.WHERE;
-				// console.log("Inside WHERE:", anyQuery.WHERE);
-				if (Object.keys(whereStatement).length !== 1) {
-					throw new InsightError("WHERE can only have one key");
-				}
 				let filteredData: any;
-				filteredData = this.processWhere(whereStatement, data, id);
+				if (Object.keys(whereStatement).length === 0) {
+					filteredData = data;
+				} else if (Object.keys(whereStatement).length !== 1) {
+					throw new InsightError("WHERE can only have one key");
+				} else {
+					filteredData = this.processWhere(whereStatement, data, id);
+				}
 				if (filteredData.length > 5000) {
 					throw new ResultTooLargeError("More than 5000 results");
 				}
