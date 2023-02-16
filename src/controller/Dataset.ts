@@ -29,4 +29,10 @@ export class Dataset implements InsightDataset{
 		this.courses.push(course);
 		this.numRows += course.getRows();
 	}
+	public setCourses(courses: Course[]) {
+		this.courses = courses;
+	}
+	public setRows(rows: number) {
+		this.numRows = rows;
+	}
 }
