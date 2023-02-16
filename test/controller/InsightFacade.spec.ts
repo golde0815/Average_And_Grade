@@ -26,7 +26,6 @@ describe("InsightFacade", function () {
 	before(function () {
 		// This block runs once and loads the datasets.
 		sections = getContentFromArchives("pair.zip");
-
 		// Just in case there is anything hanging around from a previous run of the test suite
 		clearDisk();
 	});
@@ -44,18 +43,21 @@ describe("InsightFacade", function () {
 		});
 
 		afterEach(function() {
-			fs.readdir("./data", (err, files) => {
-				if (err) {
-					throw err;
-				}
-				for (const file of files) {
-					fs.unlink(path.join("./data", file), (error) => {
-						if (error) {
-							throw error;
-						}
-					});
-				}
-			});
+			if (fs.existsSync("./data")) {
+				fs.readdir("./data", (err, files) => {
+					if (err) {
+						throw err;
+					}
+					for (const file of files) {
+						fs.unlink(path.join("./data", file), (error) => {
+							if (error) {
+								throw error;
+							}
+						});
+					}
+				});
+			}
+
 		});
 		// This is a unit test. You should create more like this!
 		it ("should reject with  an empty dataset id", function() {
@@ -216,8 +218,21 @@ describe("InsightFacade", function() {
 			sections = getContentFromArchives("pair.zip");
 		});
 		beforeEach(function() {
-			clearDisk();
 			facade = new InsightFacade();
+		});
+		after(function() {
+			fs.readdir("./data", (err, files) => {
+				if (err) {
+					throw err;
+				}
+				for (const file of files) {
+					fs.unlink(path.join("./data", file), (error) => {
+						if (error) {
+							throw error;
+						}
+					});
+				}
+			});
 		});
 
 		it("should remove", async function(){
@@ -238,24 +253,14 @@ describe("InsightFacade", function() {
 		});
 
 		it("should reject with an whitespace", async function(){
-			try{
-				await facade.removeDataset("");
-				expect.fail("Should have rejected!");
-			} catch(err) {
-				expect(err).to.be.instanceof(InsightError);
-			}
-			// return expect(result).to.eventually.be.rejectedWith(InsightError);
+			let result = facade.removeDataset("");
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
 		});
 
 		it("should reject with an whitespace 2", async function(){
 			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
-			try {
-				await facade.removeDataset("");
-				expect.fail("Should have rejected!");
-			} catch(err) {
-				expect(err).to.be.instanceof(InsightError);
-			}
-			// return expect(result).to.eventually.be.rejectedWith(InsightError);
+			let result = facade.removeDataset("");
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
 		});
 	});
 
@@ -268,10 +273,22 @@ describe("InsightFacade", function() {
 		});
 
 		beforeEach(function() {
-			clearDisk();
 			facade = new InsightFacade();
 		});
-
+		after(function() {
+			fs.readdir("./data", (err, files) => {
+				if (err) {
+					throw err;
+				}
+				for (const file of files) {
+					fs.unlink(path.join("./data", file), (error) => {
+						if (error) {
+							throw error;
+						}
+					});
+				}
+			});
+		});
 		it("empty facade", function(){
 			const result = facade.listDatasets();
 			return expect(result).to.eventually.deep.equal([]);
