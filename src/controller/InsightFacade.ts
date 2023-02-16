@@ -25,6 +25,27 @@ export default class InsightFacade implements IInsightFacade {
 	private datasets: any;
 	constructor() {
 		this.datasets = {};
+		fs.readdir("./data", (err, files) => {
+			if (err) {
+				console.log("No existing data directory");
+			} else if (files.length === 0) {
+				console.log("No existing data in data directory");
+			} else {
+				for (const file of files) {
+					fs.readFile("./data/" + file,"utf8", (error, data) => {
+						if (error) {
+							console.log("Invalid data");
+						} else {
+							let datasetData = JSON.parse(data);
+							let dataset = new Dataset(datasetData.id, datasetData.kind);
+							dataset.setCourses(datasetData.courses);
+							dataset.setRows(datasetData.numRows);
+							this.datasets[datasetData.id] = dataset;
+						}
+					});
+				}
+			}
+		});
 		console.log("InsightFacadeImpl::init()");
 	}
 	// Write tests, write to data directory
@@ -66,6 +87,7 @@ export default class InsightFacade implements IInsightFacade {
 							reject(new InsightError("Error adding file"));
 						}
 					});
+					console.log(this.datasets);
 					resolve(Object.keys(this.datasets));
 				}).catch(() => { // implement writing file to disk
 					reject(new InsightError("Invalid content"));
