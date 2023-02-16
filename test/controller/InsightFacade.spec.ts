@@ -24,14 +24,13 @@ describe("InsightFacade", function () {
 	let sections: string;
 
 	before(function () {
-		// This block runs once and loads the datasets.
-		sections = getContentFromArchives("pair.zip");
 		// Just in case there is anything hanging around from a previous run of the test suite
 		clearDisk();
 	});
 
 	describe("Add/Remove/List Dataset", function () {
 		before(function () {
+			sections = getContentFromArchives("small.zip");
 			console.info(`Before: ${this.test?.parent?.title}`);
 		});
 
@@ -57,7 +56,6 @@ describe("InsightFacade", function () {
 					}
 				});
 			}
-
 		});
 		// This is a unit test. You should create more like this!
 		it ("should reject with  an empty dataset id", function() {
@@ -84,6 +82,25 @@ describe("InsightFacade", function () {
 			const result = facade.addDataset("", sections, InsightDatasetKind.Sections);
 			return expect(result).to.eventually.be.rejectedWith(InsightError);
 		});
+		it("should add valid dataset", function(){
+			const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			return expect(result).to.eventually.deep.equal(["valid"]);
+		});
+		it("should reject duplicate ids", async function(){
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			try {
+				await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+				expect.fail("Should have rejected!");
+			} catch(err){
+				expect(err).to.be.instanceof(InsightError);
+			}
+		});
+		it("should add three valid datasets", async function(){
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			await facade.addDataset("validtwo",sections,InsightDatasetKind.Sections);
+			const result = await facade.addDataset("validthree",sections,InsightDatasetKind.Sections);
+			return expect(result).to.deep.equal(["valid","validtwo","validthree"]);
+		});
 	});
 
 	/*
@@ -94,7 +111,7 @@ describe("InsightFacade", function () {
 	describe("PerformQuery", () => {
 		before(function () {
 			console.info(`Before: ${this.test?.parent?.title}`);
-
+			sections = getContentFromArchives("pair.zip");
 			facade = new InsightFacade();
 
 			// Load the datasets specified in datasetsToQuery and add them to InsightFacade.
@@ -138,7 +155,7 @@ describe("InsightFacade", function() {
 		let facade: InsightFacade;
 
 		before(function() {
-			sections = getContentFromArchives("pair.zip");
+			sections = getContentFromArchives("small.zip");
 		});
 
 		beforeEach(function() {
@@ -195,7 +212,7 @@ describe("InsightFacade", function() {
 		let facade: InsightFacade;
 
 		before(function() {
-			sections = getContentFromArchives("pair.zip");
+			sections = getContentFromArchives("small.zip");
 		});
 		beforeEach(function() {
 			facade = new InsightFacade();
@@ -249,7 +266,7 @@ describe("InsightFacade", function() {
 		let facade: InsightFacade;
 
 		before(function() {
-			sections = getContentFromArchives("pair.zip");
+			sections = getContentFromArchives("small.zip");
 		});
 
 		beforeEach(function() {
@@ -280,7 +297,7 @@ describe("InsightFacade", function() {
 			return expect(result).to.deep.equal([{
 				id: "valid",
 				kind: InsightDatasetKind.Sections,
-				numRows: 64612
+				numRows: 1198
 			}]);
 		});
 
@@ -291,11 +308,11 @@ describe("InsightFacade", function() {
 			return expect(result).to.deep.equal([{
 				id: "valid",
 				kind: InsightDatasetKind.Sections,
-				numRows: 64612
+				numRows: 1198
 			}, {
 				id: "validtwo",
 				kind: InsightDatasetKind.Sections,
-				numRows: 64612
+				numRows: 1198
 			}]);
 		});
 	});
@@ -385,8 +402,6 @@ describe("InsightFacade", function() {
 		});
 
 		it("should throw ResultTooLargeError", async function() {
-			// let allsections = getContentFromArchives("pair.zip");
-			// await facade.addDataset("sections",allsections,InsightDatasetKind.Sections);
 			const query3: unknown = {
 				WHERE: {
 					GT: {
@@ -408,8 +423,27 @@ describe("InsightFacade", function() {
 			} catch(err) {
 				expect(err).to.be.instanceof(ResultTooLargeError);
 			}
-			// const result = facade.performQuery(query3);
-			// return expect(result).to.eventually.be.rejectedWith(ResultTooLargeError);
+		});
+
+		it("should throw ResultTooLargeError for empty where", async function() {
+			const query3: unknown = {
+				WHERE: {
+				},
+				OPTIONS: {
+					COLUMNS: [
+						"sections_dept",
+						"sections_id",
+						"sections_avg"
+					],
+					ORDER: "sections_avg"
+				}
+			};
+			try {
+				await facade.performQuery(query3);
+				expect.fail("Should have rejected!");
+			} catch(err) {
+				expect(err).to.be.instanceof(ResultTooLargeError);
+			}
 		});
 
 		it("should reject because order key is not in column", async function() {
