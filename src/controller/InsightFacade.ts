@@ -3,7 +3,7 @@ import {
 	InsightDataset,
 	InsightDatasetKind,
 	InsightError,
-	InsightResult, ResultTooLargeError
+	InsightResult, NotFoundError, ResultTooLargeError
 } from "./IInsightFacade";
 import isController from "./isController";
 import eqController from "./eqController";
@@ -55,9 +55,7 @@ export default class InsightFacade implements IInsightFacade {
 						promises.push(coursePromise);
 					});
 					return Promise.all(promises);
-				}).catch(() => {
-					reject(new InsightError("Invalid content"));
-				}).then(() => { // implement writing file to disk
+				}).then(() => {
 					this.datasets[id] = dataset;
 					let datasetString = JSON.stringify(dataset);
 					if (!fs.existsSync("./data")) {
@@ -69,54 +67,60 @@ export default class InsightFacade implements IInsightFacade {
 						}
 					});
 					resolve(Object.keys(this.datasets));
+				}).catch(() => { // implement writing file to disk
+					reject(new InsightError("Invalid content"));
 				});
 		});
 	}
 
 	public removeDataset(id: string): Promise<string> {
-		return Promise.resolve("Not implemented.");
+		if (this.datasets[id] === undefined) {
+			return Promise.reject(new NotFoundError("ID not found"));
+		}
+		delete this.datasets[id];
+		return Promise.resolve(id);
 	}
-	public andController(query: any, data: any): any {
+	public andController(query: any, data: any, id: string): any {
 		if (query.length !== 2) {
 			throw new InsightError("There should be only two sub-queries for AND");
 		}
-		data = this.processWhere(query[0], data);
-		data = this.processWhere(query[1], data);
+		data = this.processWhere(query[0], data, id);
+		data = this.processWhere(query[1], data, id);
 		return data;
 	}
-	public orController(query: any, data: any): any {
+	public orController(query: any, data: any, id: string): any {
 		if (query.length !== 2) {
 			throw new InsightError("There should be only two sub-queries for OR");
 		}
-		const processedDataFirst = this.processWhere(query[0], data);
+		const processedDataFirst = this.processWhere(query[0], data, id);
 		let mergedSet = new Set();
 		if (processedDataFirst.length > 0) {
 			processedDataFirst.forEach((eachData: any) => mergedSet.add(eachData));
 		}
-		const processedDataSecond = this.processWhere(query[1], data);
+		const processedDataSecond = this.processWhere(query[1], data, id);
 		if (processedDataSecond.length > 0) {
 			processedDataSecond.forEach((eachData: any) => mergedSet.add(eachData));
 		}
 		return Array.from(mergedSet);
 	}
-	public processWhere(whereStatement: any, filteredData: any) {
+	public processWhere(whereStatement: any, filteredData: any, id: string) {
 		let processedData: any = filteredData;
 		if (!whereStatement.AND && !whereStatement.OR && !whereStatement.NOT && !whereStatement.GT &&
 			!whereStatement.LT && !whereStatement.IS && !whereStatement.EQ) {
 			throw new InsightError("Invalid key in where");
 		}
 		if (whereStatement.AND) {
-			processedData = this.andController(whereStatement.AND, processedData);
+			processedData = this.andController(whereStatement.AND, processedData, id);
 		}
 		if (whereStatement.OR) {
-			processedData = this.orController(whereStatement.OR, processedData);
+			processedData = this.orController(whereStatement.OR, processedData, id);
 		}
 		if (whereStatement.NOT) {
 			if (Object.keys(whereStatement.NOT).length !== 1) {
 				throw new InsightError("NOT can only have one key");
 			}
 			let dataToExclude: any;
-			dataToExclude = this.processWhere(whereStatement.NOT, processedData);
+			dataToExclude = this.processWhere(whereStatement.NOT, processedData, id);
 			processedData = processedData.filter(function(eachData: any) {
 				if (dataToExclude.indexOf(eachData) > -1){
 					return false;
@@ -126,16 +130,16 @@ export default class InsightFacade implements IInsightFacade {
 			});
 		}
 		if (whereStatement.GT) {
-			processedData = gtController(whereStatement.GT, processedData);
+			processedData = gtController(whereStatement.GT, processedData, id);
 		}
 		if (whereStatement.LT) {
-			processedData = ltController(whereStatement.LT, processedData);
+			processedData = ltController(whereStatement.LT, processedData, id);
 		}
 		if (whereStatement.IS) {
-			processedData = isController(whereStatement.IS,processedData);
+			processedData = isController(whereStatement.IS,processedData, id);
 		}
 		if (whereStatement.EQ) {
-			processedData = eqController(whereStatement.EQ, processedData);
+			processedData = eqController(whereStatement.EQ, processedData, id);
 		}
 		return processedData;
 	}
@@ -175,8 +179,8 @@ export default class InsightFacade implements IInsightFacade {
 		}
 		let data: any[] = [];
 		courseData[id].courses.forEach((eachData: any) => {
-			if (eachData[id].length > 0) {
-				data = data.concat(eachData[id]);
+			if (eachData["sections"].length > 0) {
+				data = data.concat(eachData["sections"]);
 			}
 		});
 		return new Promise<InsightResult[]>((resolve, reject) => {
@@ -187,7 +191,7 @@ export default class InsightFacade implements IInsightFacade {
 					throw new InsightError("WHERE can only have one key");
 				}
 				let filteredData: any;
-				filteredData = this.processWhere(whereStatement, data);
+				filteredData = this.processWhere(whereStatement, data, id);
 				if (filteredData.length > 5000) {
 					throw new ResultTooLargeError("More than 5000 results");
 				}
@@ -195,7 +199,7 @@ export default class InsightFacade implements IInsightFacade {
 				// console.log("filteredData: ", filteredData);
 				const optionStatement = anyQuery.OPTIONS;
 				this.validateOptions(optionStatement);
-				finalData = optionController(optionStatement, filteredData);
+				finalData = optionController(optionStatement, filteredData,id);
 				finalData = orderController(optionStatement.ORDER,finalData);
 				return resolve(finalData);
 			} catch (err) {
@@ -205,6 +209,13 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	public listDatasets(): Promise<InsightDataset[]> {
-		return Promise.resolve([]);
+		let listedResult = Object.keys(this.datasets).map((eachID) => {
+			return {
+				id: this.datasets[eachID].id,
+				kind: this.datasets[eachID].kind,
+				numRows: this.datasets[eachID].numRows
+			};
+		});
+		return Promise.resolve(listedResult);
 	}
 }

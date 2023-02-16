@@ -22,7 +22,7 @@ export class Dataset implements InsightDataset{
 		for (const secData of courseData.result) {
 			let section = new Section(secData.id, secData.Course, secData.Title,
 				secData.Professor, secData.Subject, secData.Year, secData.Avg, secData.Pass,
-				secData.Fail, secData.Audit);
+				secData.Fail, secData.Audit, secData.Section);
 			sections.push(section);
 		}
 		let course = new Course(sections);

@@ -43,17 +43,20 @@ describe("InsightFacade", function () {
 			facade = new InsightFacade();
 		});
 
-		after(function () {
-			console.info(`After: ${this.test?.parent?.title}`);
+		afterEach(function() {
+			fs.readdir("./data", (err, files) => {
+				if (err) {
+					throw err;
+				}
+				for (const file of files) {
+					fs.unlink(path.join("./data", file), (error) => {
+						if (error) {
+							throw error;
+						}
+					});
+				}
+			});
 		});
-
-		afterEach(function () {
-			// This section resets the data directory (removing any cached data)
-			// This runs after each test, which should make each test independent of the previous one
-			console.info(`AfterTest: ${this.currentTest?.title}`);
-			clearDisk();
-		});
-
 		// This is a unit test. You should create more like this!
 		it ("should reject with  an empty dataset id", function() {
 			const result = facade.addDataset("", sections, InsightDatasetKind.Sections);
@@ -210,9 +213,8 @@ describe("InsightFacade", function() {
 		let facade: InsightFacade;
 
 		before(function() {
-			sections = getContentFromArchives("small.zip");
+			sections = getContentFromArchives("pair.zip");
 		});
-
 		beforeEach(function() {
 			clearDisk();
 			facade = new InsightFacade();
@@ -315,9 +317,8 @@ describe("InsightFacade", function() {
 				WHERE: {
 					AND:[
 						{GT:{sections_avg:94.8}},
-						{IS:{sections_dept:"cps*"}}
+						{IS:{sections_dept:"cps*"}},
 					]
-					// GT:{sections_avg:94.8}
 				},
 				OPTIONS: {
 					COLUMNS: [
@@ -333,9 +334,30 @@ describe("InsightFacade", function() {
 				{sections_dept:"cpsc",sections_id:"589",sections_avg:95},
 				{sections_dept:"cpsc",sections_id:"589",sections_avg:95}
 			]);
-			// return expect(result).to.deep.equal([
-			// 	{sections_dept:"cpsc",sections_id:"110",sections_avg:99}
-			// ]);
+		});
+		it("should work with query different section name", async function() {
+			const queryAND: unknown = {
+				WHERE: {
+					AND:[
+						{GT:{valid_avg:94.8}},
+						{IS:{valid_dept:"cps*"}},
+					]
+				},
+				OPTIONS: {
+					COLUMNS: [
+						"valid_dept",
+						"valid_id",
+						"valid_avg"
+					],
+					ORDER: "valid_avg",
+				}
+			};
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			const result = await facade.performQuery(queryAND);
+			return expect(result).to.deep.equal([
+				{valid_dept:"cpsc",valid_id:"589",valid_avg:95},
+				{valid_dept:"cpsc",valid_id:"589",valid_avg:95}
+			]);
 		});
 
 		it("should reject sections_avg:string", async function() {
@@ -432,7 +454,7 @@ describe("InsightFacade", function() {
 					OR:[
 						{AND:[{IS:{sections_dept: "cpsc"}},
 							{LT:{sections_pass: 3}}]},
-						{EQ:{sections_avg:99}}
+						{EQ:{sections_avg:94.8}}
 					]
 				},
 				OPTIONS: {
@@ -480,7 +502,7 @@ describe("InsightFacade", function() {
 		it("should work with double negation", async function() {
 			const query6: unknown = {
 				WHERE: {
-					NOT: {NOT: {IS: {sections_dept: "cpsc"}}}
+					NOT: {NOT: {IS: {sections_instructor: "kiczales, gregor"}}}
 				},
 				OPTIONS: {
 					COLUMNS: [
@@ -515,7 +537,7 @@ describe("InsightFacade", function() {
 
 		});
 
-		it.only("tests wildcards", async function() {
+		it("tests wildcards", async function() {
 			const query7: unknown = {
 				WHERE: {
 					AND :[
@@ -547,6 +569,31 @@ describe("InsightFacade", function() {
 			expect(result[3]).to.deep.equal(expected[3]);
 			return expect(result).to.have.deep.members(expected);
 		});
-
+		it("tests invalid wildcards", async function() {
+			const query7: unknown = {
+				WHERE: {
+					AND :[
+						{AND:[{LT:{sections_avg: 89.5}},
+							{GT:{sections_avg: 89}}]},
+						{OR:[{IS:{sections_dept:"**nj*"}},
+							{IS:{sections_dept:"z*"}}]}
+					]
+				},
+				OPTIONS: {
+					COLUMNS: [
+						"sections_dept",
+						"sections_id",
+						"sections_avg"
+					],
+					ORDER: "sections_avg"
+				}
+			};
+			try {
+				await facade.performQuery(query7);
+				expect.fail("Should have rejected!");
+			} catch(err) {
+				expect(err).to.be.instanceof(InsightError);
+			}
+		});
 	});
 });
