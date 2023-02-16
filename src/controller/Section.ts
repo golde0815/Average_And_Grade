@@ -11,14 +11,14 @@ export class Section {
 	private readonly audit: number;
 
 
-	constructor(uuid: string, id: string, title: string, instructor: string, dept: string, year: string, avg: number,
-		pass: number, fail: number, audit: number) {
-		this.uuid = uuid;
+	constructor(uuid: number, id: string, title: string, instructor: string, dept: string, year: string, avg: number,
+		pass: number, fail: number, audit: number, section: string) {
+		this.uuid = String(uuid);
 		this.id = id;
 		this.title = title;
 		this.instructor = instructor;
 		this.dept = dept;
-		if (year === "overall") {
+		if (section === "overall" || year === undefined) {
 			this.year = 1900;
 		} else {
 			this.year = Number(year);
