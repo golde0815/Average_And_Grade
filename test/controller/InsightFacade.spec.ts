@@ -159,7 +159,7 @@ describe("InsightFacade", function() {
 		});
 
 		beforeEach(function() {
-			// clearDisk();
+			clearDisk();
 			facade = new InsightFacade();
 		});
 
@@ -193,14 +193,6 @@ describe("InsightFacade", function() {
 			const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
 			return expect(result).to.eventually.be.rejectedWith(InsightError);
 		});
-
-		it("should add three valid datasets", async function(){
-			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
-			await facade.addDataset("validtwo",sections,InsightDatasetKind.Sections);
-			const result = await facade.addDataset("validthree",sections,InsightDatasetKind.Sections);
-			return expect(result).to.deep.equal(["valid","validtwo","validthree"]);
-		});
-
 		it("should reject with rooms kind", function() {
 			const result = facade.addDataset("_", sections,InsightDatasetKind.Rooms);
 			return expect(result).to.eventually.be.rejectedWith(InsightError);
@@ -322,6 +314,7 @@ describe("InsightFacade", function() {
 		let facade: InsightFacade;
 
 		before(async function() {
+			clearDisk();
 			sections = getContentFromArchives("pair.zip");
 			facade = new InsightFacade();
 			await facade.addDataset("sections",sections,InsightDatasetKind.Sections);

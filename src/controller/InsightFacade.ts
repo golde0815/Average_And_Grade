@@ -25,30 +25,17 @@ export default class InsightFacade implements IInsightFacade {
 	private datasets: any;
 	constructor() {
 		this.datasets = {};
-		fs.readdir("./data", (err, files) => {
-			if (err) {
-				console.log("No existing data directory");
-			} else if (files.length === 0) {
-				console.log("No existing data in data directory");
-			} else {
+		if (fs.existsSync("./data")) {
+			const files = fs.readdirSync("./data");
+			if (files.length > 0) {
 				for (const file of files) {
-					fs.readFile("./data/" + file,"utf8", (error, data) => {
-						if (error) {
-							console.log("Invalid data");
-						} else {
-							let datasetData = JSON.parse(data);
-							let dataset = new Dataset(datasetData.id, datasetData.kind);
-							dataset.setCourses(datasetData.courses);
-							dataset.setRows(datasetData.numRows);
-							this.datasets[datasetData.id] = dataset;
-						}
-					});
+					const dataset = fs.readJsonSync("./data/" + file);
+					this.datasets[dataset.id] = dataset;
 				}
 			}
-		});
+		}
 		console.log("InsightFacadeImpl::init()");
 	}
-	// Write tests, write to data directory
 	public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
 		return new Promise<string[]>((resolve, reject) => {
 			if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
