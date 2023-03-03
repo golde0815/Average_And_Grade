@@ -5,6 +5,7 @@ export class Course {
 	constructor(sections: Section[]) {
 		this.sections = sections;
 	}
+
 	public getRows() {
 		return this.sections.length;
 	}
