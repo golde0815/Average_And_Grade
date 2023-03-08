@@ -5,17 +5,16 @@ import {
 	InsightError,
 	InsightResult, NotFoundError, ResultTooLargeError
 } from "./IInsightFacade";
-import isController from "./isController";
-import eqController from "./eqController";
-import gtController from "./gtController";
 import optionController from "./optionController";
 import orderController from "./orderController";
-import ltController from "./ltController";
+import processWhere from "./processWhere";
 import {Dataset} from "./Dataset";
 import JSZip, {JSZipObject} from "jszip";
 import fs from "fs-extra";
 import {Course} from "./Course";
 import {Section} from "./Section";
+
+
 /**
  * This is the main programmatic entry point for the project.
  * Method documentation is in IInsightFacade
@@ -25,15 +24,15 @@ export default class InsightFacade implements IInsightFacade {
 	private datasets: any;
 	constructor() {
 		this.datasets = {};
-		if (fs.existsSync("./data")) {
-			const files = fs.readdirSync("./data");
-			if (files.length > 0) {
-				for (const file of files) {
-					const dataset = fs.readJsonSync("./data/" + file);
-					this.datasets[dataset.id] = dataset;
-				}
-			}
-		}
+		// if (fs.existsSync("./data")) {
+		// 	const files = fs.readdirSync("./data");
+		// 	if (files.length > 0) {
+		// 		for (const file of files) {
+		// 			const dataset = fs.readJsonSync("./data/" + file);
+		// 			this.datasets[dataset.id] = dataset;
+		// 		}
+		// 	}
+		// }
 		console.log("InsightFacadeImpl::init()");
 	}
 
@@ -108,72 +107,6 @@ export default class InsightFacade implements IInsightFacade {
 		return Promise.resolve(id);
 	}
 
-	public andController(query: any, data: any, id: string): any {
-		if (query.length !== 2) {
-			throw new InsightError("There should be only two sub-queries for AND");
-		}
-		data = this.processWhere(query[0], data, id);
-		data = this.processWhere(query[1], data, id);
-		return data;
-	}
-
-	public orController(query: any, data: any, id: string): any {
-		if (query.length !== 2) {
-			throw new InsightError("There should be only two sub-queries for OR");
-		}
-		const processedDataFirst = this.processWhere(query[0], data, id);
-		let mergedSet = new Set();
-		if (processedDataFirst.length > 0) {
-			processedDataFirst.forEach((eachData: any) => mergedSet.add(eachData));
-		}
-		const processedDataSecond = this.processWhere(query[1], data, id);
-		if (processedDataSecond.length > 0) {
-			processedDataSecond.forEach((eachData: any) => mergedSet.add(eachData));
-		}
-		return Array.from(mergedSet);
-	}
-
-	public processWhere(whereStatement: any, filteredData: any, id: string) {
-		let processedData: any = filteredData;
-		if (!whereStatement.AND && !whereStatement.OR && !whereStatement.NOT && !whereStatement.GT &&
-			!whereStatement.LT && !whereStatement.IS && !whereStatement.EQ) {
-			throw new InsightError("Invalid key in where");
-		}
-		if (whereStatement.AND) {
-			processedData = this.andController(whereStatement.AND, processedData, id);
-		}
-		if (whereStatement.OR) {
-			processedData = this.orController(whereStatement.OR, processedData, id);
-		}
-		if (whereStatement.NOT) {
-			if (Object.keys(whereStatement.NOT).length !== 1) {
-				throw new InsightError("NOT can only have one key");
-			}
-			let dataToExclude: any;
-			dataToExclude = this.processWhere(whereStatement.NOT, processedData, id);
-			processedData = processedData.filter(function(eachData: any) {
-				if (dataToExclude.indexOf(eachData) > -1){
-					return false;
-				} else {
-					return true;
-				}
-			});
-		}
-		if (whereStatement.GT) {
-			processedData = gtController(whereStatement.GT, processedData, id);
-		}
-		if (whereStatement.LT) {
-			processedData = ltController(whereStatement.LT, processedData, id);
-		}
-		if (whereStatement.IS) {
-			processedData = isController(whereStatement.IS,processedData, id);
-		}
-		if (whereStatement.EQ) {
-			processedData = eqController(whereStatement.EQ, processedData, id);
-		}
-		return processedData;
-	}
-
 	public validateOptions(optionStatement: any) {
 		if (Object.keys(optionStatement).length === 1) {
 			if (!optionStatement.COLUMNS) {
@@ -182,9 +115,6 @@ export default class InsightFacade implements IInsightFacade {
 		} else if (Object.keys(optionStatement).length === 2) {
 			if (!optionStatement.COLUMNS || !optionStatement.ORDER) {
 				throw new InsightError("Invalid key in OPTIONS");
-			}
-			if ((optionStatement.COLUMNS.find((element: string) => element === optionStatement.ORDER)) === undefined) {
-				throw new InsightError("ORDER Key must be in Columns");
 			}
 		} else {
 			throw new InsightError("OPTIONS should only contain one or two statements");
@@ -230,17 +160,18 @@ export default class InsightFacade implements IInsightFacade {
 				} else if (Object.keys(whereStatement).length !== 1) {
 					throw new InsightError("WHERE can only have one key");
 				} else {
-					filteredData = this.processWhere(whereStatement, data, id);
+					filteredData = processWhere(whereStatement, data, id);
 				}
 				if (filteredData.length > 5000) {
 					throw new ResultTooLargeError("More than 5000 results");
 				}
 				let finalData: InsightResult[];
-				// console.log("filteredData: ", filteredData);
 				const optionStatement = anyQuery.OPTIONS;
 				this.validateOptions(optionStatement);
 				finalData = optionController(optionStatement, filteredData,id);
-				finalData = orderController(optionStatement.ORDER,finalData);
+				if (optionStatement.ORDER) {
+					finalData = orderController(optionStatement,finalData);
+				}
 				return resolve(finalData);
 			} catch (err) {
 				return reject(err);

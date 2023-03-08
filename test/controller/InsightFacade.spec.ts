@@ -159,7 +159,7 @@ describe("InsightFacade", function() {
 		});
 
 		beforeEach(function() {
-			clearDisk();
+			// clearDisk();
 			facade = new InsightFacade();
 		});
 
@@ -314,7 +314,7 @@ describe("InsightFacade", function() {
 		let facade: InsightFacade;
 
 		before(async function() {
-			clearDisk();
+			// clearDisk();
 			sections = getContentFromArchives("pair.zip");
 			facade = new InsightFacade();
 			await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
@@ -560,7 +560,69 @@ describe("InsightFacade", function() {
 			return expect(result).to.have.deep.members(expected);
 
 		});
+		it.only("should work with object", async function() {
+			const queryObject: unknown = {
+				WHERE: {
+					IS: {
+						sections_dept: "zool"
+					}
+				},
+				OPTIONS: {
+					COLUMNS: [
+						"sections_id",
+						"sections_year",
+						"sections_avg"
+					],
+					ORDER: {
+						dir: "UP",
+						keys: [
+							"sections_avg"
+						]
+					}
+				}
+			};
+			const result = await facade.performQuery(queryObject);
+			const expected: InsightResult[] = [
+				{sections_id: "549", sections_year: 2010,sections_avg: 83.67},
+				{sections_id: "549",sections_year: 1900,sections_avg: 85},
+				{sections_id: "549",sections_year: 2008,sections_avg: 85},
+				{sections_id: "503",sections_year: 2012,sections_avg: 86.25},
+				{sections_id: "503",sections_year: 1900,sections_avg: 86.25},
+				{sections_id: "549",sections_year: 2008,sections_avg: 86.8},
+				{sections_id: "549",sections_year: 2010,sections_avg: 87},
+				{sections_id: "549",sections_year: 2011,sections_avg: 87.14},
+				{sections_id: "549",sections_year: 1900,sections_avg: 87.2},
+				{sections_id: "549", sections_year: 1900, sections_avg: 87.7},
+				{sections_id: "549", sections_year: 1900, sections_avg: 87.75},
+				{sections_id: "549", sections_year: 1900, sections_avg: 88.08},
+				{sections_id: "549", sections_year: 2010, sections_avg: 88.67},
+				{sections_id: "549", sections_year: 2009, sections_avg: 88.75},
+				{sections_id: "549", sections_year: 2008, sections_avg: 88.88},
+				{sections_id: "549", sections_year: 2011, sections_avg: 89},
+				{sections_id: "549", sections_year: 2010, sections_avg: 89},
+				{sections_id: "549", sections_year: 2009, sections_avg: 89.17},
+				{sections_id: "549", sections_year: 1900, sections_avg: 89.27},
+				{sections_id: "503", sections_year: 2011, sections_avg: 89.45},
+				{sections_id: "503", sections_year: 1900, sections_avg: 89.45},
+				{sections_id: "503", sections_year: 2014, sections_avg: 89.5},
+				{sections_id: "503", sections_year: 1900, sections_avg: 89.5},
+				{sections_id: "503", sections_year: 2009, sections_avg: 89.56},
+				{sections_id: "503", sections_year: 1900, sections_avg: 89.56},
+				{sections_id: "549", sections_year: 1900, sections_avg: 89.57},
+				{sections_id: "549", sections_year: 2009, sections_avg: 90.2},
+				{sections_id: "503", sections_year: 2015, sections_avg: 90.45},
+				{sections_id: "503", sections_year: 1900, sections_avg: 90.45},
+				{sections_id: "549", sections_year: 2011, sections_avg: 91.67},
+				{sections_id: "549", sections_year: 1900, sections_avg: 91.67},
+				{sections_id: "549", sections_year: 2009, sections_avg: 92},
+				{sections_id: "503", sections_year: 2013, sections_avg: 92.1},
+				{sections_id: "503", sections_year: 1900, sections_avg: 92.1},
+				{sections_id: "503", sections_year: 2008, sections_avg: 92.71},
+				{sections_id: "503", sections_year: 1900, sections_avg: 92.71}
+			];
+			return expect(result).to.deep.equal(expected);
 
+		});
 		it("tests wildcards", async function() {
 			const query7: unknown = {
 				WHERE: {
