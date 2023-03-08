@@ -12,7 +12,7 @@ import optionController from "./optionController";
 import orderController from "./orderController";
 import ltController from "./ltController";
 import {Dataset} from "./Dataset";
-import JSZip from "jszip";
+import JSZip, {JSZipObject} from "jszip";
 import fs from "fs-extra";
 import {Course} from "./Course";
 import {Section} from "./Section";
@@ -36,6 +36,32 @@ export default class InsightFacade implements IInsightFacade {
 		}
 		console.log("InsightFacadeImpl::init()");
 	}
+
+	public courseHelper(zip: JSZip, dataset: Dataset): Promise<void[]> {
+		return new Promise<void[]>((resolve, reject) => {
+			if (zip.folder("courses/") === null) {
+				reject(new InsightError("Invalid content (no courses)"));
+			}
+			let promises: Array<Promise<void>> = [];
+			zip.folder("courses/")?.forEach((relativePath, file) => {
+				let coursePromise: Promise<void> = file.async("string")
+					.then((text) => {
+						dataset.addCourse(text);
+					}).catch(() => {
+						reject(new InsightError("Invalid course content"));
+					});
+				promises.push(coursePromise);
+			});
+			resolve(Promise.all(promises));
+		});
+	}
+
+	public roomsHelper(zip: JSZip, dataset: Dataset): Promise<void[]> {
+		return new Promise<void[]>((resolve, reject) => {
+			return null;
+		});
+	}
+
 	public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
 		return new Promise<string[]>((resolve, reject) => {
 			if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
@@ -49,20 +75,9 @@ export default class InsightFacade implements IInsightFacade {
 			let zip = new JSZip(), dataset = new Dataset(id, kind);
 			return zip.loadAsync(content, {base64: true})
 				.then(() => {
-					if (zip.folder("courses/") === null) {
-						reject(new InsightError("Invalid content (no courses)"));
+					if (kind === InsightDatasetKind.Sections) {
+						return this.courseHelper(zip, dataset);
 					}
-					let promises: Array<Promise<void>> = [];
-					zip.folder("courses/")?.forEach((relativePath, file) => {
-						let coursePromise: Promise<void> = file.async("string")
-							.then((text) => {
-								dataset.addCourse(text);
-							}).catch(() => {
-								reject(new InsightError("Invalid course content"));
-							});
-						promises.push(coursePromise);
-					});
-					return Promise.all(promises);
 				}).then(() => {
 					this.datasets[id] = dataset;
 					let datasetString = JSON.stringify(dataset);
@@ -81,6 +96,7 @@ export default class InsightFacade implements IInsightFacade {
 				});
 		});
 	}
+
 	public removeDataset(id: string): Promise<string> {
 		if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
 			return Promise.reject(new InsightError("Invalid ID"));
@@ -91,6 +107,7 @@ export default class InsightFacade implements IInsightFacade {
 		delete this.datasets[id];
 		return Promise.resolve(id);
 	}
+
 	public andController(query: any, data: any, id: string): any {
 		if (query.length !== 2) {
 			throw new InsightError("There should be only two sub-queries for AND");
@@ -99,6 +116,7 @@ export default class InsightFacade implements IInsightFacade {
 		data = this.processWhere(query[1], data, id);
 		return data;
 	}
+
 	public orController(query: any, data: any, id: string): any {
 		if (query.length !== 2) {
 			throw new InsightError("There should be only two sub-queries for OR");
@@ -114,6 +132,7 @@ export default class InsightFacade implements IInsightFacade {
 		}
 		return Array.from(mergedSet);
 	}
+
 	public processWhere(whereStatement: any, filteredData: any, id: string) {
 		let processedData: any = filteredData;
 		if (!whereStatement.AND && !whereStatement.OR && !whereStatement.NOT && !whereStatement.GT &&
@@ -154,6 +173,7 @@ export default class InsightFacade implements IInsightFacade {
 		}
 		return processedData;
 	}
+
 	public validateOptions(optionStatement: any) {
 		if (Object.keys(optionStatement).length === 1) {
 			if (!optionStatement.COLUMNS) {
@@ -171,12 +191,14 @@ export default class InsightFacade implements IInsightFacade {
 		}
 		return;
 	}
+
 	public findID(query: any): string {
 		if(query.OPTIONS.COLUMNS && Array.isArray(query.OPTIONS.COLUMNS) && query.OPTIONS.COLUMNS.length > 0) {
 			return query.OPTIONS.COLUMNS[0].split("_")[0];
 		}
 		return "";
 	}
+
 	public performQuery(query: unknown): Promise<InsightResult[]> {
 		const anyQuery: any = query;
 		let courseData: any = this.datasets;
