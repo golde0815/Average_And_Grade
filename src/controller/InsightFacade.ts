@@ -9,7 +9,7 @@ import optionController from "./optionController";
 import orderController from "./orderController";
 import processWhere from "./processWhere";
 import {Dataset} from "./Dataset";
-import JSZip from "jszip";
+import JSZip, {JSZipObject} from "jszip";
 import fs from "fs-extra";
 import {Course} from "./Course";
 import {Section} from "./Section";
@@ -36,6 +36,31 @@ export default class InsightFacade implements IInsightFacade {
 		console.log("InsightFacadeImpl::init()");
 	}
 
+	public courseHelper(zip: JSZip, dataset: Dataset): Promise<void[]> {
+		return new Promise<void[]>((resolve, reject) => {
+			if (zip.folder("courses/") === null) {
+				reject(new InsightError("Invalid content (no courses)"));
+			}
+			let promises: Array<Promise<void>> = [];
+			zip.folder("courses/")?.forEach((relativePath, file) => {
+				let coursePromise: Promise<void> = file.async("string")
+					.then((text) => {
+						dataset.addCourse(text);
+					}).catch(() => {
+						reject(new InsightError("Invalid course content"));
+					});
+				promises.push(coursePromise);
+			});
+			resolve(Promise.all(promises));
+		});
+	}
+
+	public roomsHelper(zip: JSZip, dataset: Dataset): Promise<void[]> {
+		return new Promise<void[]>((resolve, reject) => {
+			return null;
+		});
+	}
+
 	public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
 		return new Promise<string[]>((resolve, reject) => {
 			if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
@@ -49,22 +74,9 @@ export default class InsightFacade implements IInsightFacade {
 			let zip = new JSZip(), dataset = new Dataset(id, kind);
 			return zip.loadAsync(content, {base64: true})
 				.then(() => {
-					if (zip.folder("courses/") === null) {
-						reject(new InsightError("Invalid content (no courses)"));
+					if (kind === InsightDatasetKind.Sections) {
+						return this.courseHelper(zip, dataset);
 					}
-					let promises: Array<Promise<void>> = [];
-					zip.folder("courses/")?.forEach((relativePath, file) => {
-						let coursePromise: Promise<void> = file.async("string")
-							// eslint-disable-next-line max-nested-callbacks
-							.then((text) => {
-								dataset.addCourse(text);
-								// eslint-disable-next-line max-nested-callbacks
-							}).catch(() => {
-								reject(new InsightError("Invalid course content"));
-							});
-						promises.push(coursePromise);
-					});
-					return Promise.all(promises);
 				}).then(() => {
 					this.datasets[id] = dataset;
 					let datasetString = JSON.stringify(dataset);
@@ -76,7 +88,7 @@ export default class InsightFacade implements IInsightFacade {
 							reject(new InsightError("Error adding file"));
 						}
 					});
-					// console.log(this.datasets);
+					console.log(this.datasets);
 					resolve(Object.keys(this.datasets));
 				}).catch(() => { // implement writing file to disk
 					reject(new InsightError("Invalid content"));
