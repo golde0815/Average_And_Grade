@@ -135,13 +135,17 @@ describe("InsightFacade", function () {
 			(input) => facade.performQuery(input),
 			"./test/resources/queries",
 			{
-				assertOnResult: (actual, expected) => {
-					// TODO add an assertion!
+				assertOnResult: async (actual, expected) => {
+					expect(actual).to.have.deep.members(await expected);
 				},
 				errorValidator: (error): error is PQErrorKind =>
 					error === "ResultTooLargeError" || error === "InsightError",
 				assertOnError: (actual, expected) => {
-					// TODO add an assertion!
+					if (expected === "InsightError") {
+						expect(actual).to.be.instanceof(InsightError);
+					} else {
+						expect(actual).to.be.instanceof(ResultTooLargeError);
+					}
 				},
 			}
 		);
@@ -560,7 +564,7 @@ describe("InsightFacade", function() {
 			return expect(result).to.have.deep.members(expected);
 
 		});
-		it.only("should work with object", async function() {
+		it("should work with object", async function() {
 			const queryObject: unknown = {
 				WHERE: {
 					IS: {
@@ -620,6 +624,7 @@ describe("InsightFacade", function() {
 				{sections_id: "503", sections_year: 2008, sections_avg: 92.71},
 				{sections_id: "503", sections_year: 1900, sections_avg: 92.71}
 			];
+			expect(result[0]).to.deep.equal(expected[0]);
 			return expect(result).to.deep.equal(expected);
 
 		});
@@ -681,5 +686,51 @@ describe("InsightFacade", function() {
 				expect(err).to.be.instanceof(InsightError);
 			}
 		});
+
+		// it("tests group", async function() {
+		// 	const queryGroup: unknown = {
+		// 		WHERE: {
+		// 			IS: {
+		// 				sections_dept: "adhe"
+		// 			}
+		// 		},
+		// 		OPTIONS: {
+		// 			COLUMNS: [
+		// 				"sections_title",
+		// 				"sections_instructor",
+		// 				"overallAvg",
+		// 				"overallMax"
+		// 			],
+		// 			ORDER : "overallAvg"
+		// 		},
+		// 		TRANSFORMATIONS: {
+		// 			GROUP: [
+		// 				"sections_title",
+		// 				"sections_instructor"
+		// 			],
+		// 			APPLY: [
+		// 				{
+		// 					overallAvg: {
+		// 						AVG: "sections_avg"
+		// 					}
+		// 				},
+		// 				{
+		// 					overallMax: {
+		// 						MAX: "sections_avg"
+		// 					}
+		// 				}
+		// 			]
+		// 		}
+		// 	};
+		// 	const result = await facade.performQuery(queryGroup);
+		// 	const expected: InsightResult[] = [
+		// 		{sections_title:"adul educ",overallAvg:80.23},
+		// 		{sections_title:"inst adul educ",overallAvg:80.65},
+		// 		{sections_title:"dev wkshp/sem",overallAvg:82.9},
+		// 		{sections_title:"teach adult",overallAvg:83.05},
+		// 		{sections_title:"com adult educ",overallAvg:85.25}
+		// 	];
+		// 	return expect(result).to.have.deep.members(expected);
+		// });
 	});
 });
