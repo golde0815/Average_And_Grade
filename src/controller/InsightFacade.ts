@@ -25,15 +25,15 @@ export default class InsightFacade implements IInsightFacade {
 	private datasets: any;
 	constructor() {
 		this.datasets = {};
-		if (fs.existsSync("./data")) {
-			const files = fs.readdirSync("./data");
-			if (files.length > 0) {
-				for (const file of files) {
-					const dataset = fs.readJsonSync("./data/" + file);
-					this.datasets[dataset.id] = dataset;
-				}
-			}
-		}
+		// if (fs.existsSync("./data")) {
+		// 	const files = fs.readdirSync("./data");
+		// 	if (files.length > 0) {
+		// 		for (const file of files) {
+		// 			const dataset = fs.readJsonSync("./data/" + file);
+		// 			this.datasets[dataset.id] = dataset;
+		// 		}
+		// 	}
+		// }
 		console.log("InsightFacadeImpl::init()");
 	}
 
@@ -89,7 +89,7 @@ export default class InsightFacade implements IInsightFacade {
 							reject(new InsightError("Error adding file"));
 						}
 					});
-					console.log(this.datasets);
+					// console.log(this.datasets);
 					resolve(Object.keys(this.datasets));
 				}).catch(() => { // implement writing file to disk
 					reject(new InsightError("Invalid content"));

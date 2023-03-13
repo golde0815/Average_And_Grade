@@ -31,7 +31,6 @@ function optionController(query: any,data: any,id: string,transformedData: any, 
 					const value = transformedData[eachKey].DATA[0][field];
 					extractInfo[eachColumn] = value;
 				}
-				console.log("checkpoint");
 			});
 			result.push(extractInfo);
 		});
@@ -47,7 +46,6 @@ function optionController(query: any,data: any,id: string,transformedData: any, 
 			result.push(extractInfo);
 		}
 	}
-	console.log("checkpoint");
 	return result;
 }
 

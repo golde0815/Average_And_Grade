@@ -25,9 +25,7 @@ function processTransformation(query: any, filteredData: any, id: string): any {
 			groupedData[combinedKey]["DATA"] = [eachData];
 		}
 	}
-	console.log("checkpoint");
 	groupedData = processApply(query.APPLY,groupedData,id);
-	console.log("checkpoint");
 	return groupedData;
 }
 
