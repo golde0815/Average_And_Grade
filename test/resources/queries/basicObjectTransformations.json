@@ -1,0 +1,184 @@
+{
+	"title": "basic object transformations",
+	"input": {
+		"WHERE": {
+			"IS": {
+				"sections_dept": "adhe"
+			}
+		},
+		"OPTIONS": {
+			"COLUMNS": [
+				"sections_title",
+				"sections_instructor",
+				"overallAvg",
+				"overallMax"
+			],
+			"ORDER": "overallAvg"
+		},
+		"TRANSFORMATIONS": {
+			"GROUP": [
+				"sections_title",
+				"sections_instructor"
+			],
+			"APPLY": [
+				{
+					"overallAvg": {
+						"AVG": "sections_avg"
+					}
+				},
+				{
+					"overallMax": {
+						"MAX": "sections_avg"
+					}
+				}
+			]
+		}
+	},
+	"errorExpected": false,
+	"expected": [
+		{
+			"sections_title": "dev wkshp/sem",
+			"sections_instructor": "palacios, carolina",
+			"overallAvg": 75.36,
+			"overallMax": 81.85
+		},
+		{
+			"sections_title": "teach adult",
+			"sections_instructor": "palacios, carolina",
+			"overallAvg": 76.25,
+			"overallMax": 78.41
+		},
+		{
+			"sections_title": "adul educ",
+			"sections_instructor": "palacios, carolina",
+			"overallAvg": 76.44,
+			"overallMax": 85.29
+		},
+		{
+			"sections_title": "com adult educ",
+			"sections_instructor": "butterwick, shauna;jubas, kaela",
+			"overallAvg": 77.03,
+			"overallMax": 77.07
+		},
+		{
+			"sections_title": "inst adul educ",
+			"sections_instructor": "chan, jennifer",
+			"overallAvg": 78.5,
+			"overallMax": 78.91
+		},
+		{
+			"sections_title": "inst adul educ",
+			"sections_instructor": "elfert, maren",
+			"overallAvg": 79.33,
+			"overallMax": 79.33
+		},
+		{
+			"sections_title": "inst adul educ",
+			"sections_instructor": "",
+			"overallAvg": 80.35,
+			"overallMax": 82.82
+		},
+		{
+			"sections_title": "adul educ",
+			"sections_instructor": "",
+			"overallAvg": 81.07,
+			"overallMax": 89.55
+		},
+		{
+			"sections_title": "teach adult",
+			"sections_instructor": "crisfield, erin",
+			"overallAvg": 82.38,
+			"overallMax": 87.5
+		},
+		{
+			"sections_title": "dev wkshp/sem",
+			"sections_instructor": "smulders, dave",
+			"overallAvg": 82.55,
+			"overallMax": 89.38
+		},
+		{
+			"sections_title": "adul educ",
+			"sections_instructor": "vanwynsberghe, robert",
+			"overallAvg": 83.11,
+			"overallMax": 90.16
+		},
+		{
+			"sections_title": "dev wkshp/sem",
+			"sections_instructor": "",
+			"overallAvg": 83.16,
+			"overallMax": 90.02
+		},
+		{
+			"sections_title": "teach adult",
+			"sections_instructor": "smulders, dave",
+			"overallAvg": 83.35,
+			"overallMax": 88.53
+		},
+		{
+			"sections_title": "teach adult",
+			"sections_instructor": "walker, judith",
+			"overallAvg": 83.4,
+			"overallMax": 86.59
+		},
+		{
+			"sections_title": "teach adult",
+			"sections_instructor": "",
+			"overallAvg": 83.76,
+			"overallMax": 88.53
+		},
+		{
+			"sections_title": "dev wkshp/sem",
+			"sections_instructor": "wilson, mary",
+			"overallAvg": 84.52,
+			"overallMax": 86.19
+		},
+		{
+			"sections_title": "dev wkshp/sem",
+			"sections_instructor": "aijazi, omer",
+			"overallAvg": 85.03,
+			"overallMax": 85.03
+		},
+		{
+			"sections_title": "com adult educ",
+			"sections_instructor": "",
+			"overallAvg": 85.11,
+			"overallMax": 91.33
+		},
+		{
+			"sections_title": "dev wkshp/sem",
+			"sections_instructor": "palacios, carolina;sork, thomas joda",
+			"overallAvg": 85.58,
+			"overallMax": 85.58
+		},
+		{
+			"sections_title": "com adult educ",
+			"sections_instructor": "bishundayal, deonarine",
+			"overallAvg": 85.72,
+			"overallMax": 91.48
+		},
+		{
+			"sections_title": "inst adul educ",
+			"sections_instructor": "vanwynsberghe, robert",
+			"overallAvg": 87.14,
+			"overallMax": 87.14
+		},
+		{
+			"sections_title": "adul educ",
+			"sections_instructor": "falk, clifford",
+			"overallAvg": 87.18,
+			"overallMax": 90.18
+		},
+		{
+			"sections_title": "teach adult",
+			"sections_instructor": "regmi, kapil",
+			"overallAvg": 89.01,
+			"overallMax": 89.51
+		},
+		{
+			"sections_title": "dev wkshp/sem",
+			"sections_instructor": "bishundayal, deonarine",
+			"overallAvg": 90.76,
+			"overallMax": 96.11
+		}
+	]
+}

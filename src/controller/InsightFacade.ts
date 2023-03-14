@@ -130,18 +130,27 @@ export default class InsightFacade implements IInsightFacade {
 		return "";
 	}
 
-	public performQuery(query: unknown): Promise<InsightResult[   ]> {
-		const anyQuery: any = query;
-		let courseData: any = this.datasets;
+	public validateQuery (anyQuery: any) {
 		if (anyQuery == null) {
-			return Promise.reject(new InsightError("Invalid query (null)"));
+			throw new InsightError("Invalid query (null)");
 		}
 		if (!anyQuery.WHERE || !anyQuery.OPTIONS) {
-			return Promise.reject(new InsightError("No WHERE / OPTION statement in query"));
+			throw new InsightError("No WHERE / OPTION statement in query");
 		}
-		if (Object.keys(anyQuery).length !== 2 && Object.keys(anyQuery).length !== 3) {
-			return Promise.reject(new InsightError("Query should only contain two statements"));
+		if (Object.keys(anyQuery).length !== 2) {
+			if (Object.keys(anyQuery).length === 3 && anyQuery.TRANSFORMATIONS) {
+				return;
+			} else {
+				throw new InsightError("Query should contain two statements or Transformations");
+			}
 		}
+		return;
+	}
+
+	public performQuery(query: unknown): Promise<InsightResult[]> {
+		const anyQuery: any = query;
+		let courseData: any = this.datasets;
+		this.validateQuery(anyQuery);
 		const id: string = this.findID(anyQuery);
 		if (!id) {
 			return Promise.reject(new InsightError("Invalid key"));
@@ -172,13 +181,11 @@ export default class InsightFacade implements IInsightFacade {
 				}
 				let finalData: InsightResult[];
 				const optionStatement = anyQuery.OPTIONS;
-				this.validateOptions(optionStatement);
+				this.validateOptions(optionStatement,);
 				finalData = optionController(optionStatement,filteredData,id,transformedData,anyQuery);
-				console.log("checkpoint");
 				if (optionStatement.ORDER) {
 					finalData = orderController(optionStatement,finalData);
 				}
-				console.log("checkpoint");
 				return resolve(finalData);
 			} catch (err) {
 				return reject(err);

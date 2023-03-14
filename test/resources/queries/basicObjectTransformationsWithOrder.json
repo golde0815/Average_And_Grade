@@ -1,0 +1,124 @@
+{
+	"title": "basic object transformations with order",
+	"input": {
+		"WHERE": {
+			"IS": {
+				"sections_dept": "zool"
+			}
+		},
+		"OPTIONS": {
+			"COLUMNS": [
+				"sections_title",
+				"sections_year",
+				"overallAvg",
+				"overallMax"
+			],
+			"ORDER": {
+				"dir": "UP",
+				"keys": [
+					"overallAvg",
+					"sections_title"
+				]
+			}
+		},
+		"TRANSFORMATIONS": {
+			"GROUP": [
+				"sections_title",
+				"sections_year"
+			],
+			"APPLY": [
+				{
+					"overallAvg": {
+						"AVG": "sections_avg"
+					}
+				},
+				{
+					"overallMax": {
+						"MAX": "sections_avg"
+					}
+				}
+			]
+		}
+	},
+	"errorExpected": false,
+	"expected": [
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 2012,
+			"overallAvg": 86.25,
+			"overallMax": 86.25
+		},
+		{
+			"sections_title": "masters thesis",
+			"sections_year": 2008,
+			"overallAvg": 86.89,
+			"overallMax": 88.88
+		},
+		{
+			"sections_title": "masters thesis",
+			"sections_year": 2010,
+			"overallAvg": 87.08,
+			"overallMax": 89
+		},
+		{
+			"sections_title": "masters thesis",
+			"sections_year": 1900,
+			"overallAvg": 88.28,
+			"overallMax": 91.67
+		},
+		{
+			"sections_title": "masters thesis",
+			"sections_year": 2011,
+			"overallAvg": 89.27,
+			"overallMax": 91.67
+		},
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 2011,
+			"overallAvg": 89.45,
+			"overallMax": 89.45
+		},
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 2014,
+			"overallAvg": 89.5,
+			"overallMax": 89.5
+		},
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 2009,
+			"overallAvg": 89.56,
+			"overallMax": 89.56
+		},
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 1900,
+			"overallAvg": 90,
+			"overallMax": 92.71
+		},
+		{
+			"sections_title": "masters thesis",
+			"sections_year": 2009,
+			"overallAvg": 90.03,
+			"overallMax": 92
+		},
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 2015,
+			"overallAvg": 90.45,
+			"overallMax": 90.45
+		},
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 2013,
+			"overallAvg": 92.1,
+			"overallMax": 92.1
+		},
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 2008,
+			"overallAvg": 92.71,
+			"overallMax": 92.71
+		}
+	]
+}

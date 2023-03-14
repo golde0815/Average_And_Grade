@@ -1,5 +1,4 @@
 import {InsightError, InsightResult} from "./IInsightFacade";
-import {generateKeyPair} from "crypto";
 
 function orderController(query: any, result: InsightResult[]): InsightResult[] {
 	if (typeof query.ORDER === "string") {

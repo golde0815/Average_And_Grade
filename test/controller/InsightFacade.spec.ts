@@ -137,6 +137,8 @@ describe("InsightFacade", function () {
 			{
 				assertOnResult: async (actual, expected) => {
 					expect(actual).to.have.deep.members(await expected);
+					// console.log("checkpoint");
+					// expect(actual).to.deep.equal(await expected);
 				},
 				errorValidator: (error): error is PQErrorKind =>
 					error === "ResultTooLargeError" || error === "InsightError",
@@ -687,50 +689,5 @@ describe("InsightFacade", function() {
 			}
 		});
 
-		// it("tests group", async function() {
-		// 	const queryGroup: unknown = {
-		// 		WHERE: {
-		// 			IS: {
-		// 				sections_dept: "adhe"
-		// 			}
-		// 		},
-		// 		OPTIONS: {
-		// 			COLUMNS: [
-		// 				"sections_title",
-		// 				"sections_instructor",
-		// 				"overallAvg",
-		// 				"overallMax"
-		// 			],
-		// 			ORDER : "overallAvg"
-		// 		},
-		// 		TRANSFORMATIONS: {
-		// 			GROUP: [
-		// 				"sections_title",
-		// 				"sections_instructor"
-		// 			],
-		// 			APPLY: [
-		// 				{
-		// 					overallAvg: {
-		// 						AVG: "sections_avg"
-		// 					}
-		// 				},
-		// 				{
-		// 					overallMax: {
-		// 						MAX: "sections_avg"
-		// 					}
-		// 				}
-		// 			]
-		// 		}
-		// 	};
-		// 	const result = await facade.performQuery(queryGroup);
-		// 	const expected: InsightResult[] = [
-		// 		{sections_title:"adul educ",overallAvg:80.23},
-		// 		{sections_title:"inst adul educ",overallAvg:80.65},
-		// 		{sections_title:"dev wkshp/sem",overallAvg:82.9},
-		// 		{sections_title:"teach adult",overallAvg:83.05},
-		// 		{sections_title:"com adult educ",overallAvg:85.25}
-		// 	];
-		// 	return expect(result).to.have.deep.members(expected);
-		// });
 	});
 });
