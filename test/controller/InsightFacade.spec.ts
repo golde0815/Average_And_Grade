@@ -135,13 +135,19 @@ describe("InsightFacade", function () {
 			(input) => facade.performQuery(input),
 			"./test/resources/queries",
 			{
-				assertOnResult: (actual, expected) => {
-					// TODO add an assertion!
+				assertOnResult: async (actual, expected) => {
+					expect(actual).to.have.deep.members(await expected);
+					// console.log("checkpoint");
+					// expect(actual).to.deep.equal(await expected);
 				},
 				errorValidator: (error): error is PQErrorKind =>
 					error === "ResultTooLargeError" || error === "InsightError",
 				assertOnError: (actual, expected) => {
-					// TODO add an assertion!
+					if (expected === "InsightError") {
+						expect(actual).to.be.instanceof(InsightError);
+					} else {
+						expect(actual).to.be.instanceof(ResultTooLargeError);
+					}
 				},
 			}
 		);
@@ -560,7 +566,7 @@ describe("InsightFacade", function() {
 			return expect(result).to.have.deep.members(expected);
 
 		});
-		it.only("should work with object", async function() {
+		it("should work with object", async function() {
 			const queryObject: unknown = {
 				WHERE: {
 					IS: {
@@ -620,6 +626,7 @@ describe("InsightFacade", function() {
 				{sections_id: "503", sections_year: 2008, sections_avg: 92.71},
 				{sections_id: "503", sections_year: 1900, sections_avg: 92.71}
 			];
+			expect(result[0]).to.deep.equal(expected[0]);
 			return expect(result).to.deep.equal(expected);
 
 		});
@@ -681,5 +688,6 @@ describe("InsightFacade", function() {
 				expect(err).to.be.instanceof(InsightError);
 			}
 		});
+
 	});
 });

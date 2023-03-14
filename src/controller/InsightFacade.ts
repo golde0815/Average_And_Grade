@@ -13,6 +13,7 @@ import JSZip, {JSZipObject} from "jszip";
 import fs from "fs-extra";
 import {Course} from "./Course";
 import {Section} from "./Section";
+import processTransformation from "./processTransformation";
 
 
 /**
@@ -88,7 +89,7 @@ export default class InsightFacade implements IInsightFacade {
 							reject(new InsightError("Error adding file"));
 						}
 					});
-					console.log(this.datasets);
+					// console.log(this.datasets);
 					resolve(Object.keys(this.datasets));
 				}).catch(() => { // implement writing file to disk
 					reject(new InsightError("Invalid content"));
@@ -129,18 +130,27 @@ export default class InsightFacade implements IInsightFacade {
 		return "";
 	}
 
+	public validateQuery (anyQuery: any) {
+		if (anyQuery == null) {
+			throw new InsightError("Invalid query (null)");
+		}
+		if (!anyQuery.WHERE || !anyQuery.OPTIONS) {
+			throw new InsightError("No WHERE / OPTION statement in query");
+		}
+		if (Object.keys(anyQuery).length !== 2) {
+			if (Object.keys(anyQuery).length === 3 && anyQuery.TRANSFORMATIONS) {
+				return;
+			} else {
+				throw new InsightError("Query should contain two statements or Transformations");
+			}
+		}
+		return;
+	}
+
 	public performQuery(query: unknown): Promise<InsightResult[]> {
 		const anyQuery: any = query;
 		let courseData: any = this.datasets;
-		if (anyQuery == null) {
-			return Promise.reject(new InsightError("Invalid query (null)"));
-		}
-		if (!anyQuery.WHERE || !anyQuery.OPTIONS) {
-			return Promise.reject(new InsightError("No WHERE / OPTION statement in query"));
-		}
-		if (Object.keys(anyQuery).length !== 2) {
-			return Promise.reject(new InsightError("Query should only contain two statements"));
-		}
+		this.validateQuery(anyQuery);
 		const id: string = this.findID(anyQuery);
 		if (!id) {
 			return Promise.reject(new InsightError("Invalid key"));
@@ -155,6 +165,7 @@ export default class InsightFacade implements IInsightFacade {
 			try{
 				const whereStatement = anyQuery.WHERE;
 				let filteredData: any;
+				let transformedData: any;
 				if (Object.keys(whereStatement).length === 0) {
 					filteredData = data;
 				} else if (Object.keys(whereStatement).length !== 1) {
@@ -162,13 +173,16 @@ export default class InsightFacade implements IInsightFacade {
 				} else {
 					filteredData = processWhere(whereStatement, data, id);
 				}
+				if (anyQuery.TRANSFORMATIONS) {
+					transformedData = processTransformation(anyQuery.TRANSFORMATIONS,filteredData,id);
+				}
 				if (filteredData.length > 5000) {
 					throw new ResultTooLargeError("More than 5000 results");
 				}
 				let finalData: InsightResult[];
 				const optionStatement = anyQuery.OPTIONS;
-				this.validateOptions(optionStatement);
-				finalData = optionController(optionStatement, filteredData,id);
+				this.validateOptions(optionStatement,);
+				finalData = optionController(optionStatement,filteredData,id,transformedData,anyQuery);
 				if (optionStatement.ORDER) {
 					finalData = orderController(optionStatement,finalData);
 				}
