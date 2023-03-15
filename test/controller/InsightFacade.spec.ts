@@ -22,6 +22,7 @@ describe("InsightFacade", function () {
 
 	// Declare datasets used in tests. You should add more datasets like this!
 	let sections: string;
+	let rooms: string;
 
 	before(function () {
 		// Just in case there is anything hanging around from a previous run of the test suite
@@ -31,6 +32,7 @@ describe("InsightFacade", function () {
 	describe("Add/Remove/List Dataset", function () {
 		before(function () {
 			sections = getContentFromArchives("small.zip");
+			rooms = getContentFromArchives("campus.zip");
 			console.info(`Before: ${this.test?.parent?.title}`);
 		});
 
@@ -84,6 +86,10 @@ describe("InsightFacade", function () {
 		});
 		it("should add valid dataset", function(){
 			const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			return expect(result).to.eventually.deep.equal(["valid"]);
+		});
+		it.only("should add valid rooms dataset", function(){
+			const result = facade.addDataset("valid",rooms,InsightDatasetKind.Rooms);
 			return expect(result).to.eventually.deep.equal(["valid"]);
 		});
 		it("should reject duplicate ids", async function(){

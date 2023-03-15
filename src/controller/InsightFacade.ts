@@ -10,7 +10,7 @@ import orderController from "./orderController";
 import processWhere from "./processWhere";
 import {DatasetSections} from "./DatasetSections";
 import JSZip, {JSZipObject} from "jszip";
-import {parse} from "parse5";
+import {parse, DefaultTreeAdapterMap} from "parse5";
 import fs from "fs-extra";
 import {Course} from "./Course";
 import {Section} from "./Section";
@@ -39,50 +39,6 @@ export default class InsightFacade implements IInsightFacade {
 		console.log("InsightFacadeImpl::init()");
 	}
 
-	public courseHelper(zip: JSZip, dataset: DatasetSections): Promise<void[]> {
-		return new Promise<void[]>((resolve, reject) => {
-			if (zip.folder("courses/") === null) {
-				reject(new InsightError("Invalid content (no courses)"));
-			}
-			let promises: Array<Promise<void>> = [];
-			zip.folder("courses/")?.forEach((relativePath, file) => {
-				let coursePromise: Promise<void> = file.async("string")
-					.then((text) => {
-						dataset.addCourse(text);
-					}).catch(() => {
-						reject(new InsightError("Invalid course content"));
-					});
-				promises.push(coursePromise);
-			});
-			resolve(Promise.all(promises));
-		});
-	}
-
-	public buildingsHelper(zip: JSZip, dataset: DatasetRooms): Promise<void[]> {
-		return new Promise<void[]>((resolve, reject) => {
-			if (zip.folder("campus/discover/buildings-and-classrooms") === null) {
-				reject(new InsightError("Invalid content (no buildings)"));
-			}
-			let promises: Array<Promise<void>> = [];
-			let indexText = zip.file("index.htm");
-			// if (indexText) {
-			// 	indexText.async("string").then(() => {
-			// 		let index = parse(indexText);
-			// 	});
-			// }
-			/* zip.folder("campus/discover/buildings-and-classrooms")?.forEach((relativePath, file) => {
-				let coursePromise: Promise<void> = file.async("string")
-					.then((text) => {
-						let parsed = parse(text);
-						dataset.addBuilding(parsed);
-					}).catch(() => {
-						reject(new InsightError("Invalid course content"));
-					});
-				promises.push(coursePromise);
-			}); */
-			resolve(Promise.all(promises));
-		});
-	}
 
 	public roomsHelper(zip: JSZip, dataset: DatasetRooms): Promise<void[]> {
 		return new Promise<void[]>((resolve, reject) => {
@@ -112,14 +68,16 @@ export default class InsightFacade implements IInsightFacade {
 			let dataset: any;
 			let zip = new JSZip();
 			if (kind === InsightDatasetKind.Rooms) {
-				dataset = new DatasetSections(id, kind);
+				dataset = new DatasetRooms(id, kind);
 			} else {
 				dataset = new DatasetSections(id, kind);
 			}
 			return zip.loadAsync(content, {base64: true})
 				.then(() => {
 					if (kind === InsightDatasetKind.Sections) {
-						return this.courseHelper(zip, dataset);
+						return dataset.courseHelper(zip);
+					} else {
+						return dataset.buildingsHelper(zip);
 					}
 				}).then(() => {
 					this.datasets[id] = dataset;
