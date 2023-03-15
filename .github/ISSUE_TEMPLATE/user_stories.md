@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ---
 name: User Stories
 about: Use this template for user stories submission
@@ -115,7 +114,7 @@ Given: The user is on the page that allows them to manage data
 When: The user can check the datasets currently stored
 
 Then: The user sees there are no datasets to remove
-=======
+
 ---
 name: User Stories
 about: Use this template for user stories submission
@@ -232,4 +231,3 @@ Given: The user is on the page that allows them to manage data
 When: The user can check the datasets currently stored
 
 Then: The user sees there are no datasets to remove
->>>>>>> 81a4645ae3dea8fc6c891ed4be1baf389f761e12

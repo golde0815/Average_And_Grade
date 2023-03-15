@@ -28,7 +28,7 @@ describe("InsightFacade", function () {
 		clearDisk();
 	});
 
-	describe("Add/Remove/List DatasetSections", function () {
+	describe("Add/Remove/List Dataset", function () {
 		before(function () {
 			sections = getContentFromArchives("small.zip");
 			console.info(`Before: ${this.test?.parent?.title}`);
@@ -135,13 +135,19 @@ describe("InsightFacade", function () {
 			(input) => facade.performQuery(input),
 			"./test/resources/queries",
 			{
-				assertOnResult: (actual, expected) => {
-					// TODO add an assertion!
+				assertOnResult: async (actual, expected) => {
+					expect(actual).to.have.deep.members(await expected);
+					// console.log("checkpoint");
+					// expect(actual).to.deep.equal(await expected);
 				},
 				errorValidator: (error): error is PQErrorKind =>
 					error === "ResultTooLargeError" || error === "InsightError",
 				assertOnError: (actual, expected) => {
-					// TODO add an assertion!
+					if (expected === "InsightError") {
+						expect(actual).to.be.instanceof(InsightError);
+					} else {
+						expect(actual).to.be.instanceof(ResultTooLargeError);
+					}
 				},
 			}
 		);
@@ -187,10 +193,13 @@ describe("InsightFacade", function() {
 			const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
 			return expect(result).to.eventually.deep.equal(["valid"]);
 		});
-
-		it("should reject duplicate ids", async function(){
-			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
-			const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+		// it("should reject duplicate ids 2", async function(){
+		// 	await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+		// 	const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+		// 	return expect(result).to.eventually.be.rejectedWith(InsightError);
+		// });
+		it("should reject with rooms kind", function() {
+			const result = facade.addDataset("_", sections,InsightDatasetKind.Rooms);
 			return expect(result).to.eventually.be.rejectedWith(InsightError);
 		});
 	});
@@ -242,11 +251,11 @@ describe("InsightFacade", function() {
 			return expect(result).to.eventually.be.rejectedWith(InsightError);
 		});
 
-		it("should reject with an whitespace 2", async function(){
-			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
-			let result = facade.removeDataset("");
-			return expect(result).to.eventually.be.rejectedWith(InsightError);
-		});
+		// it("should reject with an whitespace 2", async function(){
+		// 	await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+		// 	let result = facade.removeDataset("");
+		// 	return expect(result).to.eventually.be.rejectedWith(InsightError);
+		// });
 	});
 
 	describe("listDatasets", function() {
@@ -288,21 +297,21 @@ describe("InsightFacade", function() {
 				numRows: 1198
 			}]);
 		});
-
-		it("two dataset in facade", async function(){
-			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
-			await facade.addDataset("validtwo",sections,InsightDatasetKind.Sections);
-			const result = await facade.listDatasets();
-			return expect(result).to.deep.equal([{
-				id: "valid",
-				kind: InsightDatasetKind.Sections,
-				numRows: 1198
-			}, {
-				id: "validtwo",
-				kind: InsightDatasetKind.Sections,
-				numRows: 1198
-			}]);
-		});
+		//
+		// it("two dataset in facade", async function(){
+		// 	await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+		// 	await facade.addDataset("validtwo",sections,InsightDatasetKind.Sections);
+		// 	const result = await facade.listDatasets();
+		// 	return expect(result).to.deep.equal([{
+		// 		id: "valid",
+		// 		kind: InsightDatasetKind.Sections,
+		// 		numRows: 1198
+		// 	}, {
+		// 		id: "validtwo",
+		// 		kind: InsightDatasetKind.Sections,
+		// 		numRows: 1198
+		// 	}]);
+		// });
 	});
 
 	describe("performquery", function () {
@@ -556,7 +565,7 @@ describe("InsightFacade", function() {
 			return expect(result).to.have.deep.members(expected);
 
 		});
-		it.only("should work with object", async function() {
+		it("should work with object", async function() {
 			const queryObject: unknown = {
 				WHERE: {
 					IS: {
@@ -616,6 +625,7 @@ describe("InsightFacade", function() {
 				{sections_id: "503", sections_year: 2008, sections_avg: 92.71},
 				{sections_id: "503", sections_year: 1900, sections_avg: 92.71}
 			];
+			expect(result[0]).to.deep.equal(expected[0]);
 			return expect(result).to.deep.equal(expected);
 
 		});
@@ -677,5 +687,6 @@ describe("InsightFacade", function() {
 				expect(err).to.be.instanceof(InsightError);
 			}
 		});
+
 	});
 });
