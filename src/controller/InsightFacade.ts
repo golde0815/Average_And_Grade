@@ -166,11 +166,44 @@ export default class InsightFacade implements IInsightFacade {
 		return;
 	}
 
-	public findID(query: any): string {
+	public findID(query: any): any {
+		let queryKey: string;
+		let queryType: InsightDatasetKind;
+		const validSFields: string[] = ["uuid","id","title","instructor","dept","year","avg","pass","fail","audit"];
+		const validRFields: string[] = ["fullname","shortname","number","name","address","lat","lon","seats",
+			"type","furniture","href"];
 		if(query.OPTIONS.COLUMNS && Array.isArray(query.OPTIONS.COLUMNS) && query.OPTIONS.COLUMNS.length > 0) {
-			return query.OPTIONS.COLUMNS[0].split("_")[0];
+			queryKey = query.OPTIONS.COLUMNS[0];
+		} else {
+			throw new InsightError("Invalid option");
 		}
-		return "";
+		let queryKeyIdAndType: string[] = queryKey.split("_");
+		if (queryKeyIdAndType.length === 2) {
+			queryKey = queryKeyIdAndType[0];
+		} else {
+			throw new InsightError("Invalid key in query");
+		}
+		if (validSFields.includes(queryKeyIdAndType[1])) {
+			queryType = InsightDatasetKind.Sections;
+		} else if (validRFields.includes(queryKeyIdAndType[1])) {
+			queryType = InsightDatasetKind.Rooms;
+		} else {
+			throw new InsightError("Invalid dataset type for query");
+		}
+		let filteredDataset: Array<{id: string; kind: InsightDatasetKind;}> = [];
+		Object.keys(this.datasets).forEach((datasetIndicies: any) => {
+			if (this.datasets[datasetIndicies].id === queryKey && this.datasets[datasetIndicies].kind === queryType) {
+				let queryObject: {id: string; kind: InsightDatasetKind;} = {
+					id: this.datasets[datasetIndicies].id,
+					kind: this.datasets[datasetIndicies].kind
+				};
+				filteredDataset.push(queryObject);
+			}
+		});
+		if (filteredDataset.length !== 1) {
+			throw new InsightError("The corresponding dataset is not added");
+		}
+		return filteredDataset[0];
 	}
 
 	public validateQuery (anyQuery: any) {
@@ -194,8 +227,10 @@ export default class InsightFacade implements IInsightFacade {
 		const anyQuery: any = query;
 		let courseData: any = this.datasets;
 		this.validateQuery(anyQuery);
-		const id: string = this.findID(anyQuery);
-		if (!id) {
+		const idAndType: {id: string; kind: InsightDatasetKind;} = this.findID(anyQuery);
+		const id: string = idAndType.id;
+		const kind: InsightDatasetKind = idAndType.kind;
+		if (!id || id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
 			return Promise.reject(new InsightError("Invalid key"));
 		}
 		let data: any[] = [];
@@ -214,20 +249,20 @@ export default class InsightFacade implements IInsightFacade {
 				} else if (Object.keys(whereStatement).length !== 1) {
 					throw new InsightError("WHERE can only have one key");
 				} else {
-					filteredData = processWhere(whereStatement, data, id);
+					filteredData = processWhere(whereStatement, data, id, kind);
 				}
 				if (anyQuery.TRANSFORMATIONS) {
-					transformedData = processTransformation(anyQuery.TRANSFORMATIONS,filteredData,id);
-				}
-				if (filteredData.length > 5000) {
-					throw new ResultTooLargeError("More than 5000 results");
+					transformedData = processTransformation(anyQuery.TRANSFORMATIONS,filteredData,id,kind);
 				}
 				let finalData: InsightResult[];
 				const optionStatement = anyQuery.OPTIONS;
 				this.validateOptions(optionStatement,);
-				finalData = optionController(optionStatement,filteredData,id,transformedData,anyQuery);
+				finalData = optionController(optionStatement,filteredData,id,transformedData,anyQuery,kind);
 				if (optionStatement.ORDER) {
 					finalData = orderController(optionStatement,finalData);
+				}
+				if (finalData.length > 5000) {
+					throw new ResultTooLargeError("More than 5000 results");
 				}
 				return resolve(finalData);
 			} catch (err) {

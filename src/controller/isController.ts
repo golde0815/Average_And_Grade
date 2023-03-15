@@ -1,5 +1,5 @@
 import InsightFacade from "./InsightFacade";
-import {InsightError} from "./IInsightFacade";
+import {InsightDatasetKind, InsightError} from "./IInsightFacade";
 function handleWildcards(isValue: string, field: string, data: any): any {
 	let filteredData: any;
 	if (isValue === "*") {
@@ -44,8 +44,9 @@ function handleWildcards(isValue: string, field: string, data: any): any {
 	}
 	return filteredData;
 }
-function isController(query: any, data: any, id: string): any {
-	const stringFields: string[] = ["uuid","id","title","instructor","dept"];
+function isController(query: any, data: any, id: string, kind: InsightDatasetKind): any {
+	const stringCourseFields: string[] = ["uuid","id","title","instructor","dept"];
+	const stringRoomFields: string[] = ["fullname","shortname","number","name","address","type","furniture","href"];
 	if (Object.keys(query).length !== 1) {
 		throw new InsightError("IS can only have one key");
 	}
@@ -56,9 +57,14 @@ function isController(query: any, data: any, id: string): any {
 		throw new InsightError("Invalid ID in IS");
 	}
 	const field = isKey.split("_")[1];
-	// console.log("In stringFields:",(stringFields.find((element) => element === field)));
-	if ((stringFields.find((element) => element === field)) === undefined) {
-		throw new InsightError("Invalid field in IS");
+	if (kind === InsightDatasetKind.Sections) {
+		if ((stringCourseFields.find((element) => element === field)) === undefined) {
+			throw new InsightError("Invalid field in IS (should have sections field)");
+		}
+	} else {
+		if ((stringRoomFields.find((element) => element === field)) === undefined) {
+			throw new InsightError("Invalid field in IS (should have rooms field)");
+		}
 	}
 	if (typeof isValue !== "string") {
 		throw new InsightError("Invalid type in IS");
