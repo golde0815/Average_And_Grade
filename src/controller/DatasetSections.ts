@@ -16,7 +16,7 @@ export class DatasetSections implements InsightDataset{
 		this.numRows = 0;
 	}
 
-	public addCourse(text: string) {
+	private addCourse(text: string) {
 		let courseData = JSON.parse(text);
 		let sections: Section[];
 		sections = [];
@@ -32,14 +32,14 @@ export class DatasetSections implements InsightDataset{
 	}
 
 
-	public courseHelper(zip: JSZip): Promise<void[]> {
-		return new Promise<void[]>((resolve, reject) => {
+	public courseHelper(zip: JSZip): Promise<any> {
+		return new Promise<any>((resolve, reject) => {
 			if (zip.folder("courses/") === null) {
 				reject(new InsightError("Invalid content (no courses)"));
 			}
-			let promises: Array<Promise<void>> = [];
+			let promises: Array<Promise<any>> = [];
 			zip.folder("courses/")?.forEach((relativePath, file) => {
-				let coursePromise: Promise<void> = file.async("string")
+				let coursePromise: Promise<any> = file.async("string")
 					.then((text) => {
 						this.addCourse(text);
 					}).catch(() => {

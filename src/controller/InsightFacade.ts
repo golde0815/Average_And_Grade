@@ -40,23 +40,6 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 
-	public roomsHelper(zip: JSZip, dataset: DatasetRooms): Promise<void[]> {
-		return new Promise<void[]>((resolve, reject) => {
-			let promises: Array<Promise<void>> = [];
-			zip.folder("campus/discover/buildings-and-classrooms")?.forEach((relativePath, file) => {
-				let coursePromise: Promise<void> = file.async("string")
-					.then((text) => {
-						let parsed = parse(text);
-						dataset.addBuilding(parsed);
-					}).catch(() => {
-						reject(new InsightError("Invalid course content"));
-					});
-				promises.push(coursePromise);
-			});
-			resolve(Promise.all(promises));
-		});
-	}
-
 	public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
 		return new Promise<string[]>((resolve, reject) => {
 			if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
@@ -92,8 +75,8 @@ export default class InsightFacade implements IInsightFacade {
 					});
 					// console.log(this.datasets);
 					resolve(Object.keys(this.datasets));
-				}).catch(() => { // implement writing file to disk
-					reject(new InsightError("Invalid content"));
+				}).catch((error) => { // implement writing file to disk
+					reject(new InsightError("Issue with writing file" + error));
 				});
 		});
 	}
