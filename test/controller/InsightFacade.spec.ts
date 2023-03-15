@@ -58,7 +58,7 @@ describe("InsightFacade", function () {
 			}
 		});
 		// This is a unit test. You should create more like this!
-		it ("should reject with  an empty dataset id", function() {
+		it ("should reject with an empty dataset id", function() {
 			const result = facade.addDataset("", sections, InsightDatasetKind.Sections);
 			return expect(result).to.eventually.be.rejectedWith(InsightError);
 		});
@@ -184,12 +184,12 @@ describe("InsightFacade", function() {
 			});
 		});
 
-		it("should reject with an empty dataset id", function(){
+		it("should reject with an empty dataset id 2", function(){
 			const result = facade.addDataset("",sections,InsightDatasetKind.Sections);
 			return expect(result).to.eventually.be.rejectedWith(InsightError);
 		});
 
-		it("should add valid dataset", function(){
+		it("should add valid dataset 2", function(){
 			const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
 			return expect(result).to.eventually.deep.equal(["valid"]);
 		});

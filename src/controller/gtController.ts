@@ -1,8 +1,8 @@
-import InsightFacade from "./InsightFacade";
-import {InsightError} from "./IInsightFacade";
+import {InsightDatasetKind, InsightError} from "./IInsightFacade";
 
-function gtController(query: any, data: any, id: string): any {
-	const numberFields: string[] = ["year","avg","pass","fail","audit"];
+function gtController(query: any, data: any, id: string, kind: InsightDatasetKind): any {
+	const numberCourseFields: string[] = ["year","avg","pass","fail","audit"];
+	const numberRoomFields: string[] = ["lat","lon","seats"];
 	if (Object.keys(query).length !== 1) {
 		throw new InsightError("GT can only have one key");
 	}
@@ -12,14 +12,15 @@ function gtController(query: any, data: any, id: string): any {
 	if (gtId !== id) {
 		throw new InsightError("Invalid ID in GT");
 	}
-	// console.log("gtKey:", gtKey);
-	// console.log("gtKey type:", typeof gtKey);
-	// console.log("gtValue:", gtValue);
-	// console.log("gtValue type:", typeof gtValue);
 	const field = gtKey.split("_")[1];
-	// console.log("In numberFields:",(numberFields.find((element) => element === field)));
-	if ((numberFields.find((element) => element === field)) === undefined) {
-		throw new InsightError("Invalid field in GT");
+	if (kind === InsightDatasetKind.Sections) {
+		if ((numberCourseFields.find((element) => element === field)) === undefined) {
+			throw new InsightError("Invalid field in GT (should have sections field)");
+		}
+	} else {
+		if ((numberRoomFields.find((element) => element === field)) === undefined) {
+			throw new InsightError("Invalid field in GT (should have rooms field)");
+		}
 	}
 	if (typeof gtValue !== "number") {
 		throw new InsightError("Invalid type in GT");
