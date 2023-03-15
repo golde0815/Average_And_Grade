@@ -1,8 +1,10 @@
 import InsightFacade from "./InsightFacade";
-import {InsightError, InsightResult} from "./IInsightFacade";
+import {InsightDatasetKind, InsightError, InsightResult} from "./IInsightFacade";
 
-function validateOption(query: any, anyQuery: any, id: string) {
-	const validFields: string[] = ["uuid","id","title","instructor","dept","year","avg","pass","fail","audit"];
+function validateOption(query: any, anyQuery: any, id: string, kind: InsightDatasetKind) {
+	const validCourseFields: string[] = ["uuid","id","title","instructor","dept","year","avg","pass","fail","audit"];
+	const validRoomFields: string[] = ["shortname", "fullname", "number", "name", "address", "lat", "lon", "seats",
+		"type", "furniture", "href"];
 	if (anyQuery.TRANSFORMATIONS) {
 		let applyKeys = [];
 		for (let eachKey of anyQuery.TRANSFORMATIONS.APPLY) {
@@ -17,9 +19,18 @@ function validateOption(query: any, anyQuery: any, id: string) {
 		for (const indices in query.COLUMNS) {
 			let queryKey = query.COLUMNS[indices].split("_")[1];
 			let boolApply = !applyKeys.includes(query.COLUMNS[indices]);
-			if (validFields.find((element) => element === queryKey) === undefined && boolApply) {
-				throw new InsightError("Invalid keys in COLUMNS");
+			if (kind === InsightDatasetKind.Sections) {
+				if (validCourseFields.find((element) => element === queryKey) === undefined && boolApply) {
+					throw new InsightError("Invalid field in COLUMN (should have sections field)");
+				}
+			} else {
+				if (validRoomFields.find((element) => element === queryKey) === undefined && boolApply) {
+					throw new InsightError("Invalid keys in COLUMN (should have rooms field)");
+				}
 			}
+			// if (validFields.find((element) => element === queryKey) === undefined && boolApply) {
+			// 	throw new InsightError("Invalid keys in COLUMNS");
+			// }
 		}
 	} else {
 		for (const indices in query.COLUMNS) {
@@ -28,15 +39,24 @@ function validateOption(query: any, anyQuery: any, id: string) {
 			}
 		}
 		for (const indices in query.COLUMNS) {
-			if (validFields.find((element) => element === query.COLUMNS[indices].split("_")[1]) === undefined) {
-				throw new InsightError("Invalid keys in COLUMNS");
+			let queryKey = query.COLUMNS[indices].split("_")[1];
+			if (kind === InsightDatasetKind.Sections) {
+				if (validCourseFields.find((element) => element === queryKey) === undefined) {
+					throw new InsightError("Invalid field in COLUMN (should have sections field)");
+				}
+			} else {
+				if (validRoomFields.find((element) => element === queryKey) === undefined) {
+					throw new InsightError("Invalid keys in COLUMN (should have rooms field)");
+				}
 			}
+
 		}
 	}
 	return;
 }
-function optionController(query: any,data: any,id: string,transformedData: any, anyQuery: any): InsightResult[] {
-	validateOption(query, anyQuery, id);
+function optionController(query: any,data: any,id: string,transformedData: any, anyQuery: any,
+						  kind: InsightDatasetKind): InsightResult[] {
+	validateOption(query, anyQuery, id, kind);
 	let result: InsightResult[] = [];
 	let numOfColumnKey = query.COLUMNS.length;
 	if (transformedData && Array.isArray(query.COLUMNS)) {

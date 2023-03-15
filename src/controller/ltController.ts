@@ -1,8 +1,9 @@
 import InsightFacade from "./InsightFacade";
-import {InsightError} from "./IInsightFacade";
+import {InsightDatasetKind, InsightError} from "./IInsightFacade";
 
-function ltController(query: any, data: any, id: string): any {
-	const numberFields: string[] = ["year","avg","pass","fail","audit"];
+function ltController(query: any, data: any, id: string, kind: InsightDatasetKind): any {
+	const numberCourseFields: string[] = ["year","avg","pass","fail","audit"];
+	const numberRoomFields: string[] = ["lat","lon","seats"];
 	if (Object.keys(query).length !== 1) {
 		throw new InsightError("LT can only have one key");
 	}
@@ -12,14 +13,15 @@ function ltController(query: any, data: any, id: string): any {
 	if (ltId !== id) {
 		throw new InsightError("Invalid ID in eq");
 	}
-	// console.log("ltKey:", ltKey);
-	// console.log("ltKey type:", typeof ltKey);
-	// console.log("ltValue:", ltValue);
-	// console.log("ltValue type:", typeof ltValue);
 	const field = ltKey.split("_")[1];
-	// console.log("In numberFields:",(numberFields.find((element) => element === field)));
-	if ((numberFields.find((element) => element === field)) === undefined) {
-		throw new InsightError("Invalid field in LT");
+	if (kind === InsightDatasetKind.Sections) {
+		if ((numberCourseFields.find((element) => element === field)) === undefined) {
+			throw new InsightError("Invalid field in LT (should have sections field)");
+		}
+	} else {
+		if ((numberRoomFields.find((element) => element === field)) === undefined) {
+			throw new InsightError("Invalid field in LT (should have rooms field)");
+		}
 	}
 	if (typeof ltValue !== "number") {
 		throw new InsightError("Invalid type in LT");

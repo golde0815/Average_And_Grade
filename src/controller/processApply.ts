@@ -1,12 +1,20 @@
-import {InsightError} from "./IInsightFacade";
+import {InsightDatasetKind, InsightError} from "./IInsightFacade";
 import Decimal from "decimal.js";
-function validateApply (value: string, id: string) {
-	const validFields: string[] = ["uuid","id","title","instructor","dept","year","avg","pass","fail","audit"];
+function validateApply (value: string, id: string, kind: InsightDatasetKind) {
+	const validCourseFields: string[] = ["uuid","id","title","instructor","dept","year","avg","pass","fail","audit"];
+	const validRoomFields: string[] = ["shortname", "fullname", "number", "name", "address", "lat", "lon", "seats",
+		"type", "furniture", "href"];
 	if (value.split("_")[0] !== id) {
 		throw new InsightError("Invalid ID in APPLY");
 	}
-	if (validFields.find((element) => element === value.split("_")[1]) === undefined) {
-		throw new InsightError("Invalid keys in APPLY");
+	if (kind === InsightDatasetKind.Sections) {
+		if (validCourseFields.find((element) => element === value.split("_")[1]) === undefined) {
+			throw new InsightError("Invalid field in APPLY (should have sections field)");
+		}
+	} else {
+		if (validRoomFields.find((element) => element === value.split("_")[1]) === undefined) {
+			throw new InsightError("Invalid keys in APPLY (should have rooms field)");
+		}
 	}
 	return;
 }
@@ -59,13 +67,13 @@ function hasDuplication(query: any) {
 	}
 	return;
 }
-function processApply (query: any, groupedData: any, id: string): any {
+function processApply (query: any, groupedData: any, id: string, kind: InsightDatasetKind): any {
 	hasDuplication(query);
 	for (let eachQuery of query) {
 		let key = Object.keys(eachQuery)[0];
 		let valueObject = eachQuery[key];
 		if (valueObject.AVG) {
-			validateApply(valueObject.AVG, id);
+			validateApply(valueObject.AVG, id, kind);
 			Object.keys(eachQuery).forEach((eachQueryKey: string) => {
 				let avgKey = eachQuery[eachQueryKey].AVG.split("_")[1];
 				Object.keys(groupedData).forEach((eachGroupKey: string) => {
@@ -73,7 +81,7 @@ function processApply (query: any, groupedData: any, id: string): any {
 				});
 			});
 		} else if (valueObject.SUM) {
-			validateApply(valueObject.SUM, id);
+			validateApply(valueObject.SUM, id, kind);
 			Object.keys(eachQuery).forEach((eachQueryKey: string) => {
 				let sumKey = eachQuery[eachQueryKey].SUM.split("_")[1];
 				Object.keys(groupedData).forEach((eachGroupKey: string) => {
@@ -81,7 +89,7 @@ function processApply (query: any, groupedData: any, id: string): any {
 				});
 			});
 		} else if (valueObject.MAX) {
-			validateApply(valueObject.MAX, id);
+			validateApply(valueObject.MAX, id, kind);
 			Object.keys(eachQuery).forEach((eachQueryKey: string) => {
 				let maxKey = eachQuery[eachQueryKey].MAX.split("_")[1];
 				Object.keys(groupedData).forEach((eachGroupKey: string) => {
@@ -89,7 +97,7 @@ function processApply (query: any, groupedData: any, id: string): any {
 				});
 			});
 		} else if (valueObject.MIN) {
-			validateApply(valueObject.MIN, id);
+			validateApply(valueObject.MIN, id, kind);
 			Object.keys(eachQuery).forEach((eachQueryKey: string) => {
 				let minKey = eachQuery[eachQueryKey].MIN.split("_")[1];
 				Object.keys(groupedData).forEach((eachGroupKey: string) => {
@@ -97,7 +105,7 @@ function processApply (query: any, groupedData: any, id: string): any {
 				});
 			});
 		} else if (valueObject.COUNT) {
-			validateApply(valueObject.COUNT, id);
+			validateApply(valueObject.COUNT, id, kind);
 			Object.keys(eachQuery).forEach((eachQueryKey: string) => {
 				Object.keys(groupedData).forEach((eachGroupKey: string) => {
 					groupedData[eachGroupKey][key] = groupedData[eachGroupKey].DATA.length;

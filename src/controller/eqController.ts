@@ -1,8 +1,9 @@
 import InsightFacade from "./InsightFacade";
-import {InsightError} from "./IInsightFacade";
+import {InsightDatasetKind, InsightError} from "./IInsightFacade";
 
-function eqController(query: any, data: any, id: string): any {
-	const numberFields: string[] = ["year","avg","pass","fail","audit"];
+function eqController(query: any, data: any, id: string, kind: InsightDatasetKind): any {
+	const numberCourseFields: string[] = ["year","avg","pass","fail","audit"];
+	const numberRoomFields: string[] = ["lat","lon","seats"];
 	if (Object.keys(query).length !== 1) {
 		throw new InsightError("EQ can only have one key");
 	}
@@ -13,9 +14,14 @@ function eqController(query: any, data: any, id: string): any {
 		throw new InsightError("Invalid ID in EQ");
 	}
 	const field = eqKey.split("_")[1];
-	// console.log("In numberFields:",(numberFields.find((element) => element === field)));
-	if ((numberFields.find((element) => element === field)) === undefined) {
-		throw new InsightError("Invalid field in EQ");
+	if (kind === InsightDatasetKind.Sections) {
+		if ((numberCourseFields.find((element) => element === field)) === undefined) {
+			throw new InsightError("Invalid field in EQ (should have sections field)");
+		}
+	} else {
+		if ((numberRoomFields.find((element) => element === field)) === undefined) {
+			throw new InsightError("Invalid field in EQ (should have rooms field)");
+		}
 	}
 	if (typeof eqValue !== "number") {
 		throw new InsightError("Invalid type in EQ");
