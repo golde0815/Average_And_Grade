@@ -86,15 +86,15 @@ describe("InsightFacade", function () {
 			const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
 			return expect(result).to.eventually.deep.equal(["valid"]);
 		});
-		// it("should reject duplicate ids", async function(){
-		// 	await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
-		// 	try {
-		// 		await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
-		// 		expect.fail("Should have rejected!");
-		// 	} catch(err){
-		// 		expect(err).to.be.instanceof(InsightError);
-		// 	}
-		// });
+		it("should reject duplicate ids", async function(){
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			try {
+				await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+				expect.fail("Should have rejected!");
+			} catch(err){
+				expect(err).to.be.instanceof(InsightError);
+			}
+		});
 		it("should add three valid datasets", async function(){
 			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
 			await facade.addDataset("validtwo",sections,InsightDatasetKind.Sections);
@@ -193,11 +193,11 @@ describe("InsightFacade", function() {
 			const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
 			return expect(result).to.eventually.deep.equal(["valid"]);
 		});
-		it("should reject duplicate ids 2", async function(){
-			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
-			const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
-			return expect(result).to.eventually.be.rejectedWith(InsightError);
-		});
+		// it("should reject duplicate ids 2", async function(){
+		// 	await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+		// 	const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+		// 	return expect(result).to.eventually.be.rejectedWith(InsightError);
+		// });
 		it("should reject with rooms kind", function() {
 			const result = facade.addDataset("_", sections,InsightDatasetKind.Rooms);
 			return expect(result).to.eventually.be.rejectedWith(InsightError);
