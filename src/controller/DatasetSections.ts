@@ -2,7 +2,7 @@ import {Course} from "./Course";
 import {InsightDataset, InsightDatasetKind} from "./IInsightFacade";
 import {Section} from "./Section";
 
-export class Dataset implements InsightDataset{
+export class DatasetSections implements InsightDataset{
 	public id: string;
 	public kind: InsightDatasetKind;
 	public numRows: number;
