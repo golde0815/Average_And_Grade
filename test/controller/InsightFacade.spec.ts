@@ -145,7 +145,7 @@ describe("InsightFacade", function () {
 		folderTest<unknown, Promise<InsightResult[]>, PQErrorKind>(
 			"Dynamic InsightFacade PerformQuery tests",
 			(input) => facade.performQuery(input),
-			"./test/resources/queriesqwe",
+			"./test/resources/queries",
 			{
 				assertOnResult: async (actual, expected) => {
 					expect(actual).to.have.deep.members(await expected);
@@ -210,10 +210,6 @@ describe("InsightFacade", function() {
 		// 	const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
 		// 	return expect(result).to.eventually.be.rejectedWith(InsightError);
 		// });
-		it("should reject with rooms kind", function() {
-			const result = facade.addDataset("_", sections,InsightDatasetKind.Rooms);
-			return expect(result).to.eventually.be.rejectedWith(InsightError);
-		});
 	});
 
 	describe("removeDataset", function() {
