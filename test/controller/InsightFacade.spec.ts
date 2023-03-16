@@ -94,6 +94,14 @@ describe("InsightFacade", function () {
 			const result = facade.addDataset("valid",rooms,InsightDatasetKind.Rooms);
 			return expect(result).to.eventually.deep.equal(["valid"]);
 		});
+		it("should reject an incorrect type (if type is rooms but dataset is sections)", function () {
+			const result = facade.addDataset("valid",sections,InsightDatasetKind.Rooms);
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
+		it("should reject an incorrect type (if type is sections but dataset is rooms)", function () {
+			const result = facade.addDataset("valid",rooms,InsightDatasetKind.Sections);
+			return expect(result).to.eventually.be.rejectedWith(InsightError);
+		});
 		it("should reject duplicate ids", async function(){
 			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
 			try {
@@ -214,10 +222,12 @@ describe("InsightFacade", function() {
 
 	describe("removeDataset", function() {
 		let sections: string;
+		let rooms: string;
 		let facade: InsightFacade;
 
 		before(function() {
 			sections = getContentFromArchives("small.zip");
+			rooms = getContentFromArchives("campus.zip");
 		});
 		beforeEach(function() {
 			facade = new InsightFacade();
@@ -242,7 +252,11 @@ describe("InsightFacade", function() {
 			const result = await facade.removeDataset("valid");
 			return expect(result).to.deep.equal("valid");
 		});
-
+		it("should remove (rooms)", async function(){
+			await facade.addDataset("valid",rooms,InsightDatasetKind.Rooms);
+			const result = await facade.removeDataset("valid");
+			return expect(result).to.deep.equal("valid");
+		});
 		it("should reject with id not in facade and throw NotFoundError", async function(){
 			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
 			try {

@@ -34,8 +34,8 @@ export class DatasetSections implements InsightDataset{
 
 	public courseHelper(zip: JSZip): Promise<any> {
 		return new Promise<any>((resolve, reject) => {
-			if (zip.folder("courses/") === null) {
-				reject(new InsightError("Invalid content (no courses)"));
+			if (!(Object.keys(zip.files).length > 0) || !Object.keys(zip.files)[0].includes("courses/")) {
+				reject(new InsightError("Invalid content (no courses folder)"));
 			}
 			let promises: Array<Promise<any>> = [];
 			zip.folder("courses/")?.forEach((relativePath, file) => {
