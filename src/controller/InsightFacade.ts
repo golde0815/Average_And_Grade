@@ -3,17 +3,16 @@ import {
 	InsightDataset,
 	InsightDatasetKind,
 	InsightError,
-	InsightResult, NotFoundError, ResultTooLargeError
+	InsightResult,
+	NotFoundError,
+	ResultTooLargeError
 } from "./IInsightFacade";
 import optionController from "./optionController";
 import orderController from "./orderController";
 import processWhere from "./processWhere";
 import {DatasetSections} from "./DatasetSections";
-import JSZip, {JSZipObject} from "jszip";
-import {parse, DefaultTreeAdapterMap} from "parse5";
+import JSZip from "jszip";
 import fs from "fs-extra";
-import {Course} from "./Course";
-import {Section} from "./Section";
 import {DatasetRooms} from "./DatasetRooms";
 import processTransformation from "./processTransformation";
 
@@ -74,6 +73,8 @@ export default class InsightFacade implements IInsightFacade {
 						}
 					});
 					// console.log(this.datasets);
+					// let a = this.datasets.valid.buildings.filter((building: any) => building.rooms.length > 0);
+					// console.log(a);
 					resolve(Object.keys(this.datasets));
 				}).catch((error) => { // implement writing file to disk
 					reject(new InsightError("Issue with writing file" + error));
@@ -164,9 +165,27 @@ export default class InsightFacade implements IInsightFacade {
 		return;
 	}
 
+	public getData(kind: InsightDatasetKind, courseOrRoomData: any, id: string) {
+		let data: any[] = [];
+		if (kind === InsightDatasetKind.Sections) {
+			courseOrRoomData[id].courses.forEach((eachData: any) => {
+				if (eachData["sections"].length > 0) {
+					data = data.concat(eachData["sections"]);
+				}
+			});
+		} else {
+			courseOrRoomData[id].buildings.forEach((eachData: any) => {
+				if (eachData.rooms.length > 0) {
+					data = data.concat(eachData.rooms);
+				}
+			});
+		}
+		return data;
+	}
+
 	public performQuery(query: unknown): Promise<InsightResult[]> {
 		const anyQuery: any = query;
-		let courseData: any = this.datasets;
+		let courseOrRoomData: any = this.datasets;
 		this.validateQuery(anyQuery);
 		const idAndType: {id: string; kind: InsightDatasetKind;} = this.findID(anyQuery);
 		const id: string = idAndType.id;
@@ -175,11 +194,7 @@ export default class InsightFacade implements IInsightFacade {
 			return Promise.reject(new InsightError("Invalid key"));
 		}
 		let data: any[] = [];
-		courseData[id].courses.forEach((eachData: any) => {
-			if (eachData["sections"].length > 0) {
-				data = data.concat(eachData["sections"]);
-			}
-		});
+		data = this.getData(kind, courseOrRoomData, id);
 		return new Promise<InsightResult[]>((resolve, reject) => {
 			try{
 				const whereStatement = anyQuery.WHERE;

@@ -2,7 +2,8 @@ import {
 	IInsightFacade,
 	InsightDatasetKind,
 	InsightError,
-	InsightResult, NotFoundError,
+	InsightResult,
+	NotFoundError,
 	ResultTooLargeError
 } from "../../src/controller/IInsightFacade";
 import InsightFacade from "../../src/controller/InsightFacade";
@@ -88,7 +89,7 @@ describe("InsightFacade", function () {
 			const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
 			return expect(result).to.eventually.deep.equal(["valid"]);
 		});
-		it.only("should add valid rooms dataset", function(){
+		it("should add valid rooms dataset", function(){
 			const result = facade.addDataset("valid",rooms,InsightDatasetKind.Rooms);
 			return expect(result).to.eventually.deep.equal(["valid"]);
 		});
@@ -322,13 +323,16 @@ describe("InsightFacade", function() {
 
 	describe("performquery", function () {
 		let sections: string;
+		let rooms: string;
 		let facade: InsightFacade;
 
 		before(async function() {
 			// clearDisk();
 			sections = getContentFromArchives("pair.zip");
+			rooms = getContentFromArchives("campus.zip");
 			facade = new InsightFacade();
 			await facade.addDataset("sections",sections,InsightDatasetKind.Sections);
+			await facade.addDataset("rooms",rooms,InsightDatasetKind.Rooms);
 		});
 		it("should work with query (AND)", async function() {
 			const queryAND: unknown = {
@@ -692,6 +696,56 @@ describe("InsightFacade", function() {
 			} catch(err) {
 				expect(err).to.be.instanceof(InsightError);
 			}
+		});
+
+		it("test with rooms", async function() {
+			const queryRoom: unknown = {
+				WHERE: {
+					AND: [
+						{
+							IS: {
+								rooms_furniture: "*Tables*"
+							}
+						},
+						{
+							GT: {
+								rooms_seats: 300
+							}
+						}
+					]
+				},
+				OPTIONS: {
+					COLUMNS: [
+						"rooms_shortname",
+						"maxSeats"
+					],
+					ORDER: {
+						dir: "DOWN",
+						keys: [
+							"maxSeats"
+						]
+					}
+				},
+				TRANSFORMATIONS: {
+					GROUP: [
+						"rooms_shortname"
+					],
+					APPLY: [
+						{
+							maxSeats: {
+								MAX: "rooms_seats"
+							}
+						}
+					]
+				}
+			};
+			const result = await facade.performQuery(queryRoom);
+			const expected: InsightResult[] = [
+				{rooms_shortname:"OSBO",maxSeats:442},
+				{rooms_shortname:"HEBB",maxSeats:375},
+				{rooms_shortname:"LSC",maxSeats:350}
+			];
+			return expect(result).to.have.deep.members(expected);
 		});
 
 	});
