@@ -24,6 +24,7 @@ describe("InsightFacade", function () {
 	// Declare datasets used in tests. You should add more datasets like this!
 	let sections: string;
 	let rooms: string;
+	let valid: string;
 
 	before(function () {
 		// Just in case there is anything hanging around from a previous run of the test suite
@@ -119,12 +120,16 @@ describe("InsightFacade", function () {
 		before(function () {
 			console.info(`Before: ${this.test?.parent?.title}`);
 			sections = getContentFromArchives("pair.zip");
+			rooms = getContentFromArchives("campus.zip");
+			valid = getContentFromArchives("pair.zip");
 			facade = new InsightFacade();
 
 			// Load the datasets specified in datasetsToQuery and add them to InsightFacade.
 			// Will *fail* if there is a problem reading ANY dataset.
 			const loadDatasetPromises = [
 				facade.addDataset("sections", sections, InsightDatasetKind.Sections),
+				facade.addDataset("rooms", rooms, InsightDatasetKind.Rooms),
+				facade.addDataset("valid",sections,InsightDatasetKind.Sections)
 			];
 
 			return Promise.all(loadDatasetPromises);
@@ -140,7 +145,7 @@ describe("InsightFacade", function () {
 		folderTest<unknown, Promise<InsightResult[]>, PQErrorKind>(
 			"Dynamic InsightFacade PerformQuery tests",
 			(input) => facade.performQuery(input),
-			"./test/resources/queries",
+			"./test/resources/queriesqwe",
 			{
 				assertOnResult: async (actual, expected) => {
 					expect(actual).to.have.deep.members(await expected);

@@ -1,0 +1,125 @@
+{
+	"title": "mincount",
+	"input": {
+		"WHERE": {
+			"IS": {
+				"sections_dept": "zool"
+			}
+		},
+		"OPTIONS": {
+			"COLUMNS": [
+				"sections_title",
+				"sections_year",
+				"overallMin",
+				"overallCount"
+			],
+			"ORDER": {
+				"dir": "UP",
+				"keys": [
+					"overallMin",
+					"overallCount",
+					"sections_title"
+				]
+			}
+		},
+		"TRANSFORMATIONS": {
+			"GROUP": [
+				"sections_title",
+				"sections_year"
+			],
+			"APPLY": [
+				{
+					"overallMin": {
+						"MIN": "sections_avg"
+					}
+				},
+				{
+					"overallCount": {
+						"COUNT": "sections_avg"
+					}
+				}
+			]
+		}
+	},
+	"errorExpected": false,
+	"expected": [
+		{
+			"sections_title": "masters thesis",
+			"sections_year": 2010,
+			"overallMin": 83.67,
+			"overallCount": 4
+		},
+		{
+			"sections_title": "masters thesis",
+			"sections_year": 2008,
+			"overallMin": 85,
+			"overallCount": 3
+		},
+		{
+			"sections_title": "masters thesis",
+			"sections_year": 1900,
+			"overallMin": 85,
+			"overallCount": 8
+		},
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 2012,
+			"overallMin": 86.25,
+			"overallCount": 1
+		},
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 1900,
+			"overallMin": 86.25,
+			"overallCount": 7
+		},
+		{
+			"sections_title": "masters thesis",
+			"sections_year": 2011,
+			"overallMin": 87.14,
+			"overallCount": 3
+		},
+		{
+			"sections_title": "masters thesis",
+			"sections_year": 2009,
+			"overallMin": 88.75,
+			"overallCount": 4
+		},
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 2011,
+			"overallMin": 89.45,
+			"overallCount": 1
+		},
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 2014,
+			"overallMin": 89.5,
+			"overallCount": 1
+		},
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 2009,
+			"overallMin": 89.56,
+			"overallCount": 1
+		},
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 2015,
+			"overallMin": 90.45,
+			"overallCount": 1
+		},
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 2013,
+			"overallMin": 92.1,
+			"overallCount": 1
+		},
+		{
+			"sections_title": "comp animal phyl",
+			"sections_year": 2008,
+			"overallMin": 92.71,
+			"overallCount": 1
+		}
+	]
+}
