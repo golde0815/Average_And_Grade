@@ -1,19 +1,44 @@
 import {InsightDatasetKind, InsightError} from "./IInsightFacade";
 import Decimal from "decimal.js";
-function validateApply (value: string, id: string, kind: InsightDatasetKind) {
+function validateApply (value: string, id: string, kind: InsightDatasetKind, eachQuery: any, valueObject: any) {
+	const validNCourseFields: string[] = ["year","avg","pass","fail","audit"];
 	const validCourseFields: string[] = ["uuid","id","title","instructor","dept","year","avg","pass","fail","audit"];
+	const validNRoomFields: string[] = ["lat", "lon", "seats"];
 	const validRoomFields: string[] = ["shortname", "fullname", "number", "name", "address", "lat", "lon", "seats",
 		"type", "furniture", "href"];
+	if (typeof value !== "string") {
+		throw new InsightError("Invalid apply rule");
+	}
 	if (value.split("_")[0] !== id) {
 		throw new InsightError("Invalid ID in APPLY");
 	}
+	if (Object.keys(valueObject).length !== 1) {
+		throw new InsightError("Too many keys in apply");
+	}
+
 	if (kind === InsightDatasetKind.Sections) {
-		if (validCourseFields.find((element) => element === value.split("_")[1]) === undefined) {
-			throw new InsightError("Invalid field in APPLY (should have sections field)");
+		if (valueObject.AVG || valueObject.MAX || valueObject.MIN || valueObject.SUM) {
+			if (validNCourseFields.find((element) => element === value.split("_")[1]) === undefined) {
+				throw new InsightError("Invalid field in APPLY (should have number sections field)");
+			}
+		} else if (valueObject.COUNT) {
+			if (validCourseFields.find((element) => element === value.split("_")[1]) === undefined) {
+				throw new InsightError("Invalid field in APPLY (should have sections field)");
+			}
+		} else {
+			throw new InsightError("Invalid key to aggregate");
 		}
 	} else {
-		if (validRoomFields.find((element) => element === value.split("_")[1]) === undefined) {
-			throw new InsightError("Invalid keys in APPLY (should have rooms field)");
+		if (valueObject.AVG || valueObject.MAX || valueObject.MIN || valueObject.SUM) {
+			if (validNRoomFields.find((element) => element === value.split("_")[1]) === undefined) {
+				throw new InsightError("Invalid keys in APPLY (should have rooms field)");
+			}
+		} else if (valueObject.COUNT) {
+			if (validRoomFields.find((element) => element === value.split("_")[1]) === undefined) {
+				throw new InsightError("Invalid keys in APPLY (should have rooms field)");
+			}
+		} else {
+			throw new InsightError("Invalid key to aggregate");
 		}
 	}
 	return;
@@ -57,9 +82,24 @@ function computeMin (key: string, eachGroupKey: string, groupedData: any, minKey
 	return min;
 }
 
+function computeCount (key: string, eachGroupKey: string, groupedData: any, eachQuery: any,
+					   eachQueryKey: string): number {
+	let value = groupedData[eachGroupKey].DATA;
+	let countKey = eachQuery[eachQueryKey].COUNT.split("_")[1];
+	let countSet = new Set();
+	for (let v of value) {
+		countSet.add(v[countKey]);
+	}
+	return countSet.size;
+}
+
 function hasDuplication(query: any) {
 	let applySet = new Set();
+	// if (typeof query !== Array)
 	for (let i in query) {
+		if (typeof query[i] !== "object") {
+			throw new InsightError("Invalid type");
+		}
 		applySet.add(Object.keys(query[i])[0]);
 	}
 	if (applySet.size !== query.length) {
@@ -73,7 +113,7 @@ function processApply (query: any, groupedData: any, id: string, kind: InsightDa
 		let key = Object.keys(eachQuery)[0];
 		let valueObject = eachQuery[key];
 		if (valueObject.AVG) {
-			validateApply(valueObject.AVG, id, kind);
+			validateApply(valueObject.AVG, id, kind, eachQuery, valueObject);
 			Object.keys(eachQuery).forEach((eachQueryKey: string) => {
 				let avgKey = eachQuery[eachQueryKey].AVG.split("_")[1];
 				Object.keys(groupedData).forEach((eachGroupKey: string) => {
@@ -81,7 +121,7 @@ function processApply (query: any, groupedData: any, id: string, kind: InsightDa
 				});
 			});
 		} else if (valueObject.SUM) {
-			validateApply(valueObject.SUM, id, kind);
+			validateApply(valueObject.SUM, id, kind, eachQuery, valueObject);
 			Object.keys(eachQuery).forEach((eachQueryKey: string) => {
 				let sumKey = eachQuery[eachQueryKey].SUM.split("_")[1];
 				Object.keys(groupedData).forEach((eachGroupKey: string) => {
@@ -89,7 +129,7 @@ function processApply (query: any, groupedData: any, id: string, kind: InsightDa
 				});
 			});
 		} else if (valueObject.MAX) {
-			validateApply(valueObject.MAX, id, kind);
+			validateApply(valueObject.MAX, id, kind, eachQuery, valueObject);
 			Object.keys(eachQuery).forEach((eachQueryKey: string) => {
 				let maxKey = eachQuery[eachQueryKey].MAX.split("_")[1];
 				Object.keys(groupedData).forEach((eachGroupKey: string) => {
@@ -97,7 +137,7 @@ function processApply (query: any, groupedData: any, id: string, kind: InsightDa
 				});
 			});
 		} else if (valueObject.MIN) {
-			validateApply(valueObject.MIN, id, kind);
+			validateApply(valueObject.MIN, id, kind, eachQuery, valueObject);
 			Object.keys(eachQuery).forEach((eachQueryKey: string) => {
 				let minKey = eachQuery[eachQueryKey].MIN.split("_")[1];
 				Object.keys(groupedData).forEach((eachGroupKey: string) => {
@@ -105,10 +145,10 @@ function processApply (query: any, groupedData: any, id: string, kind: InsightDa
 				});
 			});
 		} else if (valueObject.COUNT) {
-			validateApply(valueObject.COUNT, id, kind);
+			validateApply(valueObject.COUNT, id, kind, eachQuery, valueObject);
 			Object.keys(eachQuery).forEach((eachQueryKey: string) => {
 				Object.keys(groupedData).forEach((eachGroupKey: string) => {
-					groupedData[eachGroupKey][key] = groupedData[eachGroupKey].DATA.length;
+					groupedData[eachGroupKey][key] = computeCount(key,eachGroupKey,groupedData,eachQuery,eachQueryKey);
 				});
 			});
 		} else {

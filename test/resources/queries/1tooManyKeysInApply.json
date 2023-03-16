@@ -1,0 +1,47 @@
+{
+	"title": "Too many keys in apply",
+	"input": {
+		"WHERE": {
+			"IS": {
+				"sections_dept": "zool"
+			}
+		},
+		"OPTIONS": {
+			"COLUMNS": [
+				"sections_title",
+				"sections_year",
+				"overallMin",
+				"overallCount"
+			],
+			"ORDER": {
+				"dir": "UP",
+				"keys": [
+					"overallMin",
+					"overallCount",
+					"sections_title"
+				]
+			}
+		},
+		"TRANSFORMATIONS": {
+			"GROUP": [
+				"sections_title",
+				"sections_year"
+			],
+			"APPLY": [
+				{
+					"overallMin": {
+						"MIN": "sections_avg",
+						"COUNT": "sections_avg"
+					}
+				},
+				{
+					"overallCount": {
+						"COUNT": "sections_avg"
+					}
+				}
+			]
+		}
+	},
+	"errorExpected": true,
+	"expected": "InsightError"
+}

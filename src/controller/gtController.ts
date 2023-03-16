@@ -3,6 +3,9 @@ import {InsightDatasetKind, InsightError} from "./IInsightFacade";
 function gtController(query: any, data: any, id: string, kind: InsightDatasetKind): any {
 	const numberCourseFields: string[] = ["year","avg","pass","fail","audit"];
 	const numberRoomFields: string[] = ["lat","lon","seats"];
+	if (!(typeof query === "object") || Array.isArray(query)) {
+		throw new InsightError("GT should be an object");
+	}
 	if (Object.keys(query).length !== 1) {
 		throw new InsightError("GT can only have one key");
 	}

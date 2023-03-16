@@ -47,6 +47,9 @@ function handleWildcards(isValue: string, field: string, data: any): any {
 function isController(query: any, data: any, id: string, kind: InsightDatasetKind): any {
 	const stringCourseFields: string[] = ["uuid","id","title","instructor","dept"];
 	const stringRoomFields: string[] = ["fullname","shortname","number","name","address","type","furniture","href"];
+	if (!(typeof query === "object") || Array.isArray(query)) {
+		throw new InsightError("IS should be an object");
+	}
 	if (Object.keys(query).length !== 1) {
 		throw new InsightError("IS can only have one key");
 	}

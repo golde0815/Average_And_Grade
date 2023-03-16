@@ -10,7 +10,8 @@ function orderController(query: any, result: InsightResult[]): InsightResult[] {
 		);
 		return sortedArray;
 	} else if (typeof query.ORDER === "object") {
-		if (!query.ORDER.dir || !query.ORDER.keys || Object.keys(query.ORDER).length !== 2) {
+		if (!query.ORDER.dir || !query.ORDER.keys || Object.keys(query.ORDER).length !== 2 ||
+			!Array.isArray(query.ORDER.keys) || query.ORDER.keys.length < 1) {
 			throw new InsightError("Invalid order");
 		}
 		for (let key of query.ORDER.keys) {
