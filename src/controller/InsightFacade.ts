@@ -149,18 +149,26 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	public validateQuery (anyQuery: any) {
-		if (anyQuery == null) {
-			throw new InsightError("Invalid query (null)");
+		if (anyQuery == null || (!(typeof anyQuery === "object"))) {
+			throw new InsightError("Invalid query");
 		}
 		if (!anyQuery.WHERE || !anyQuery.OPTIONS) {
 			throw new InsightError("No WHERE / OPTION statement in query");
 		}
 		if (Object.keys(anyQuery).length !== 2) {
 			if (Object.keys(anyQuery).length === 3 && anyQuery.TRANSFORMATIONS) {
-				return;
+				if (!(typeof anyQuery.TRANSFORMATIONS === "object")) {
+					throw new InsightError("TRANSFORMATIONS should be an object");
+				}
 			} else {
 				throw new InsightError("Query should contain two statements or Transformations");
 			}
+		}
+		if (!(typeof anyQuery.WHERE === "object")) {
+			throw new InsightError("WHERE should be an object");
+		}
+		if (!(typeof anyQuery.OPTIONS === "object")) {
+			throw new InsightError("OPTION should be an object");
 		}
 		return;
 	}
@@ -195,12 +203,6 @@ export default class InsightFacade implements IInsightFacade {
 		}
 		let data: any[] = [];
 		data = this.getData(kind, courseOrRoomData, id);
-		if (kind === InsightDatasetKind.Rooms) {
-			console.log("stop");
-		}
-		if (kind === InsightDatasetKind.Sections) {
-			console.log("stop");
-		}
 		return new Promise<InsightResult[]>((resolve, reject) => {
 			try{
 				const whereStatement = anyQuery.WHERE;

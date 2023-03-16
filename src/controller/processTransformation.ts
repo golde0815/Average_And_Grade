@@ -6,6 +6,9 @@ function validateGroup(query: any, id: string, kind: InsightDatasetKind) {
 	const validRoomFields: string[] = ["shortname", "fullname", "number", "name", "address", "lat", "lon", "seats",
 		"type", "furniture", "href"];
 	for (const indices in query.GROUP) {
+		if (typeof query.GROUP[indices] !== "string") {
+			throw new InsightError("Invalid type in Group");
+		}
 		if (query.GROUP[indices].split("_")[0] !== id) {
 			throw new InsightError("Invalid ID in GROUP");
 		}

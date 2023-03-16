@@ -129,7 +129,7 @@ describe("InsightFacade", function () {
 			const loadDatasetPromises = [
 				facade.addDataset("sections", sections, InsightDatasetKind.Sections),
 				facade.addDataset("rooms", rooms, InsightDatasetKind.Rooms),
-				facade.addDataset("valid",sections,InsightDatasetKind.Sections)
+				// facade.addDataset("valid",sections,InsightDatasetKind.Sections)
 			];
 
 			return Promise.all(loadDatasetPromises);
@@ -145,7 +145,7 @@ describe("InsightFacade", function () {
 		folderTest<unknown, Promise<InsightResult[]>, PQErrorKind>(
 			"Dynamic InsightFacade PerformQuery tests",
 			(input) => facade.performQuery(input),
-			"./test/resources/queriesqwe",
+			"./test/resources/queries",
 			{
 				assertOnResult: async (actual, expected) => {
 					expect(actual).to.have.deep.members(await expected);
