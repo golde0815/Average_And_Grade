@@ -8,11 +8,13 @@ import {
 import optionController from "./optionController";
 import orderController from "./orderController";
 import processWhere from "./processWhere";
-import {Dataset} from "./Dataset";
+import {DatasetSections} from "./DatasetSections";
 import JSZip, {JSZipObject} from "jszip";
+import {parse, DefaultTreeAdapterMap} from "parse5";
 import fs from "fs-extra";
 import {Course} from "./Course";
 import {Section} from "./Section";
+import {DatasetRooms} from "./DatasetRooms";
 import processTransformation from "./processTransformation";
 
 
@@ -37,46 +39,28 @@ export default class InsightFacade implements IInsightFacade {
 		console.log("InsightFacadeImpl::init()");
 	}
 
-	public courseHelper(zip: JSZip, dataset: Dataset): Promise<void[]> {
-		return new Promise<void[]>((resolve, reject) => {
-			if (zip.folder("courses/") === null) {
-				reject(new InsightError("Invalid content (no courses)"));
-			}
-			let promises: Array<Promise<void>> = [];
-			zip.folder("courses/")?.forEach((relativePath, file) => {
-				let coursePromise: Promise<void> = file.async("string")
-					.then((text) => {
-						dataset.addCourse(text);
-					}).catch(() => {
-						reject(new InsightError("Invalid course content"));
-					});
-				promises.push(coursePromise);
-			});
-			resolve(Promise.all(promises));
-		});
-	}
-
-	public roomsHelper(zip: JSZip, dataset: Dataset): Promise<void[]> {
-		return new Promise<void[]>((resolve, reject) => {
-			return null;
-		});
-	}
 
 	public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
 		return new Promise<string[]>((resolve, reject) => {
 			if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
 				reject(new InsightError("Invalid ID"));
-			} else if (kind === InsightDatasetKind.Rooms) {
-				reject(new InsightError("Invalid Type"));
 			}
 			if (this.datasets[id]) {
 				reject(new InsightError("Duplicate ID"));
 			}
-			let zip = new JSZip(), dataset = new Dataset(id, kind);
+			let dataset: any;
+			let zip = new JSZip();
+			if (kind === InsightDatasetKind.Rooms) {
+				dataset = new DatasetRooms(id, kind);
+			} else {
+				dataset = new DatasetSections(id, kind);
+			}
 			return zip.loadAsync(content, {base64: true})
 				.then(() => {
 					if (kind === InsightDatasetKind.Sections) {
-						return this.courseHelper(zip, dataset);
+						return dataset.courseHelper(zip);
+					} else {
+						return dataset.buildingsHelper(zip);
 					}
 				}).then(() => {
 					this.datasets[id] = dataset;
@@ -91,8 +75,8 @@ export default class InsightFacade implements IInsightFacade {
 					});
 					// console.log(this.datasets);
 					resolve(Object.keys(this.datasets));
-				}).catch(() => { // implement writing file to disk
-					reject(new InsightError("Invalid content"));
+				}).catch((error) => { // implement writing file to disk
+					reject(new InsightError("Issue with writing file" + error));
 				});
 		});
 	}
