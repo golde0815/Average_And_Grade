@@ -1,6 +1,16 @@
 import InsightFacade from "./InsightFacade";
 import {InsightDatasetKind, InsightError, InsightResult} from "./IInsightFacade";
-
+function inTransformation (query: any, anyQuery: any) {
+	let applyKeys: string[] = [];
+	for (const j in anyQuery.TRANSFORMATIONS.APPLY) {
+		applyKeys.push(Object.keys(anyQuery.TRANSFORMATIONS.APPLY[j])[0]);
+	}
+	for (const i in query.COLUMNS) {
+		if (!anyQuery.TRANSFORMATIONS.GROUP.includes(query.COLUMNS[i]) && !applyKeys.includes(query.COLUMNS[i])) {
+			throw new InsightError("every element in column should be in group or apply");
+		}
+	}
+}
 function validateOption(query: any, anyQuery: any, id: string, kind: InsightDatasetKind) {
 	const validCourseFields: string[] = ["uuid","id","title","instructor","dept","year","avg","pass","fail","audit"];
 	const validRoomFields: string[] = ["shortname", "fullname", "number", "name", "address", "lat", "lon", "seats",
@@ -10,6 +20,7 @@ function validateOption(query: any, anyQuery: any, id: string, kind: InsightData
 		for (let eachKey of anyQuery.TRANSFORMATIONS.APPLY) {
 			applyKeys.push(Object.keys(eachKey)[0]);
 		}
+		inTransformation(query, anyQuery);
 		for (const indices in query.COLUMNS) {
 			let queryId = query.COLUMNS[indices].split("_")[0];
 			if (queryId !== id && !applyKeys.includes(query.COLUMNS[indices])) {
@@ -28,9 +39,6 @@ function validateOption(query: any, anyQuery: any, id: string, kind: InsightData
 					throw new InsightError("Invalid keys in COLUMN (should have rooms field)");
 				}
 			}
-			// if (validFields.find((element) => element === queryKey) === undefined && boolApply) {
-			// 	throw new InsightError("Invalid keys in COLUMNS");
-			// }
 		}
 	} else {
 		for (const indices in query.COLUMNS) {
@@ -49,7 +57,6 @@ function validateOption(query: any, anyQuery: any, id: string, kind: InsightData
 					throw new InsightError("Invalid keys in COLUMN (should have rooms field)");
 				}
 			}
-
 		}
 	}
 	return;

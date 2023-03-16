@@ -195,6 +195,12 @@ export default class InsightFacade implements IInsightFacade {
 		}
 		let data: any[] = [];
 		data = this.getData(kind, courseOrRoomData, id);
+		if (kind === InsightDatasetKind.Rooms) {
+			console.log("stop");
+		}
+		if (kind === InsightDatasetKind.Sections) {
+			console.log("stop");
+		}
 		return new Promise<InsightResult[]>((resolve, reject) => {
 			try{
 				const whereStatement = anyQuery.WHERE;

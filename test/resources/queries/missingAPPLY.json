@@ -1,0 +1,33 @@
+{
+	"title": "Missing APPLY",
+	"input": {
+		"WHERE": {
+			"OR": [
+				{
+					"IS": {
+						"rooms_furniture": "*Tables*"
+					}
+				}
+			]
+		},
+		"OPTIONS": {
+			"COLUMNS": [
+				"rooms_shortname",
+				"avgSeats"
+			],
+			"ORDER": {
+				"dir": "DOWN",
+				"keys": [
+					"rooms_shortname"
+				]
+			}
+		},
+		"TRANSFORMATIONS": {
+			"GROUP": [
+				"rooms_shortname"
+			]
+		}
+	},
+	"errorExpected": true,
+	"expected": "InsightError"
+}
