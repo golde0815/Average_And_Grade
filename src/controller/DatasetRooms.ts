@@ -137,7 +137,7 @@ export class DatasetRooms implements InsightDataset{
 				if (row.nodeName === "tr" && row.childNodes) {
 					let fullname: string, shortname: string, address: string, path: string;
 					let lat: number, lon: number;
-					if (!row.childNodes[3] || !row.childNodes[5] || !row.childNodes[7]) {
+					if (!row.childNodes[3] || !row.childNodes[5] || !row.childNodes[7] || !row.childNodes[9]) {
 						continue;
 					}
 					if (!row.childNodes[3].childNodes[0] || !row.childNodes[5].childNodes[1] ||
@@ -147,13 +147,13 @@ export class DatasetRooms implements InsightDataset{
 					shortname = row.childNodes[3].childNodes[0].value.trim();
 					fullname = row.childNodes[5].childNodes[1].childNodes[0].value.trim();
 					address = row.childNodes[7].childNodes[0].value.trim();
-					path = row.childNodes[1].childNodes[1].attrs[0].value;
+					path = row.childNodes[9].childNodes[1].attrs[0].value;
 					let buildingPromise: Promise<any> = this.getLoc(address)
 						.then((geolocation) => {
 							lat = geolocation[0];
 							lon = geolocation[1];
 						}).then(() => {
-							let buildingText = zip.file(path.substring(2) + ".htm");
+							let buildingText = zip.file(path.substring(2));
 							if (buildingText) {
 								return buildingText.async("string")
 									.then((text) => {
