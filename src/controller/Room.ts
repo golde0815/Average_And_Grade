@@ -20,7 +20,7 @@ export class Room {
 		this.address = address;
 		this.lat = lat;
 		this.lon = lon;
-		this.seats = seats;
+		this.seats = Number(seats);
 		this.type = type;
 		this.furniture = furniture;
 		this.href = href;

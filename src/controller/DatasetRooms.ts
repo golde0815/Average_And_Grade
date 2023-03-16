@@ -27,11 +27,22 @@ export class DatasetRooms implements InsightDataset{
 				if (row.nodeName === "tr" && row.childNodes) {
 					let roomNumber, type, furniture, href: string;
 					let seats: number;
+					if (!row.childNodes[1] || !row.childNodes[3] || !row.childNodes[5] || !row.childNodes[7]
+						|| !row.childNodes[9]) {
+						continue;
+					}
 					roomNumber = row.childNodes[1].childNodes[1].childNodes[0].value.trim();
-					seats = row.childNodes[3].childNodes[1].childNodes[0].value.trim();
-					furniture = row.childNodes[5].childNodes[1].childNodes[0].value.trim();
-					type = row.childNodes[7].childNodes[1].childNodes[0].value.trim();
-					href = row.childNodes[9].childNodes[1].attrs[0].value;
+					// seats = row.childNodes[3].childNodes[1].childNodes[0].value.trim();
+					seats = row.childNodes[3].childNodes[0] &&
+						row.childNodes[3].childNodes[0].value.trim();
+					// furniture = row.childNodes[5].childNodes[1].childNodes[0].value.trim();
+					furniture = row.childNodes[5].childNodes[0] &&
+						row.childNodes[5].childNodes[0].value.trim();
+					// type = row.childNodes[7].childNodes[1].childNodes[0].value.trim();
+					type = row.childNodes[7].childNodes[0] &&
+						row.childNodes[7].childNodes[0].value.trim();
+					// href = row.childNodes[9].childNodes[1].attrs[0].value;
+					href = row.childNodes[9].childNodes[1] && row.childNodes[9].childNodes[1].attrs[0].value;
 					let room = new Room(fullname, shortname, roomNumber, shortname + "_" + roomNumber, address, lat,
 						lon, seats, type, furniture, href);
 					rooms.push(room);
@@ -63,7 +74,8 @@ export class DatasetRooms implements InsightDataset{
 					return this.processBuildings(zip, buildingTable);
 				}).then((promise) => {
 					resolve(promise);
-				}).catch(() => {
+				}).catch((err) => {
+					console.log("err: ", err);
 					reject(new InsightError("Strange error at indextext.async"));
 				});
 			} else {
@@ -125,6 +137,13 @@ export class DatasetRooms implements InsightDataset{
 				if (row.nodeName === "tr" && row.childNodes) {
 					let fullname: string, shortname: string, address: string, path: string;
 					let lat: number, lon: number;
+					if (!row.childNodes[3] || !row.childNodes[5] || !row.childNodes[7]) {
+						continue;
+					}
+					if (!row.childNodes[3].childNodes[0] || !row.childNodes[5].childNodes[1] ||
+						!row.childNodes[7].childNodes[0]) {
+						continue;
+					}
 					shortname = row.childNodes[3].childNodes[0].value.trim();
 					fullname = row.childNodes[5].childNodes[1].childNodes[0].value.trim();
 					address = row.childNodes[7].childNodes[0].value.trim();
@@ -149,13 +168,15 @@ export class DatasetRooms implements InsightDataset{
 										this.addBuilding(roomsTable, fullname, shortname, address, lat, lon, path);
 									});
 							} else {
-								reject(new InsightError("Missing .htm file for building"));
+								// reject(new InsightError("Missing .htm file for building"));
 							}
 						});
 					promises.push(buildingPromise);
 				}
 			}
-			resolve(Promise.all(promises));
+			Promise.all(promises).then((buildings) => {
+				return resolve(buildings);
+			});
 		});
 	}
 
