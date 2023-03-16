@@ -24,7 +24,6 @@ describe("InsightFacade", function () {
 	// Declare datasets used in tests. You should add more datasets like this!
 	let sections: string;
 	let rooms: string;
-	let valid: string;
 
 	before(function () {
 		// Just in case there is anything hanging around from a previous run of the test suite
@@ -129,7 +128,6 @@ describe("InsightFacade", function () {
 			console.info(`Before: ${this.test?.parent?.title}`);
 			sections = getContentFromArchives("pair.zip");
 			rooms = getContentFromArchives("campus.zip");
-			valid = getContentFromArchives("pair.zip");
 			facade = new InsightFacade();
 
 			// Load the datasets specified in datasetsToQuery and add them to InsightFacade.

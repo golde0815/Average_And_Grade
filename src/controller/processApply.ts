@@ -82,6 +82,17 @@ function computeMin (key: string, eachGroupKey: string, groupedData: any, minKey
 	return min;
 }
 
+function computeCount (key: string, eachGroupKey: string, groupedData: any, eachQuery: any,
+					   eachQueryKey: string): number {
+	let value = groupedData[eachGroupKey].DATA;
+	let countKey = eachQuery[eachQueryKey].COUNT.split("_")[1];
+	let countSet = new Set();
+	for (let v of value) {
+		countSet.add(v[countKey]);
+	}
+	return countSet.size;
+}
+
 function hasDuplication(query: any) {
 	let applySet = new Set();
 	// if (typeof query !== Array)
@@ -137,7 +148,7 @@ function processApply (query: any, groupedData: any, id: string, kind: InsightDa
 			validateApply(valueObject.COUNT, id, kind, eachQuery, valueObject);
 			Object.keys(eachQuery).forEach((eachQueryKey: string) => {
 				Object.keys(groupedData).forEach((eachGroupKey: string) => {
-					groupedData[eachGroupKey][key] = groupedData[eachGroupKey].DATA.length;
+					groupedData[eachGroupKey][key] = computeCount(key,eachGroupKey,groupedData,eachQuery,eachQueryKey);
 				});
 			});
 		} else {
