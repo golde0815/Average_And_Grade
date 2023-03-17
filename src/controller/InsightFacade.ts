@@ -114,7 +114,14 @@ export default class InsightFacade implements IInsightFacade {
 		const validSFields: string[] = ["uuid","id","title","instructor","dept","year","avg","pass","fail","audit"];
 		const validRFields: string[] = ["fullname","shortname","number","name","address","lat","lon","seats",
 			"type","furniture","href"];
-		if(query.OPTIONS.COLUMNS && Array.isArray(query.OPTIONS.COLUMNS) && query.OPTIONS.COLUMNS.length > 0) {
+		if (query.TRANSFORMATIONS) {
+			if (query.TRANSFORMATIONS.GROUP && Array.isArray(query.TRANSFORMATIONS.GROUP)
+				&& query.TRANSFORMATIONS.GROUP.length > 0) {
+				queryKey = query.TRANSFORMATIONS.GROUP[0];
+			} else {
+				throw new InsightError("TRANSFORMATION doesn't have a key");
+			}
+		} else if(query.OPTIONS.COLUMNS && Array.isArray(query.OPTIONS.COLUMNS) && query.OPTIONS.COLUMNS.length > 0) {
 			queryKey = query.OPTIONS.COLUMNS[0];
 		} else {
 			throw new InsightError("Invalid option");
