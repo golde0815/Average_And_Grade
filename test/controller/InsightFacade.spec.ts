@@ -86,6 +86,9 @@ describe("InsightFacade", function () {
 			return expect(result).to.eventually.be.rejectedWith(InsightError);
 		});
 		it("should add valid dataset", function(){
+			facade.listDatasets().then((list) => {
+				console.log(list);
+			});
 			const result = facade.addDataset("valid",sections,InsightDatasetKind.Sections);
 			return expect(result).to.eventually.deep.equal(["valid"]);
 		});
@@ -224,11 +227,9 @@ describe("InsightFacade", function() {
 		let facade: InsightFacade;
 
 		before(function() {
+			facade = new InsightFacade();
 			sections = getContentFromArchives("small.zip");
 			rooms = getContentFromArchives("campus.zip");
-		});
-		beforeEach(function() {
-			facade = new InsightFacade();
 		});
 		after(function() {
 			fs.readdir("./data", (err, files) => {
@@ -248,9 +249,15 @@ describe("InsightFacade", function() {
 		it("should remove", async function(){
 			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
 			const result = await facade.removeDataset("valid");
+			facade.listDatasets().then((list) => {
+				console.log(list);
+			});
 			return expect(result).to.deep.equal("valid");
 		});
 		it("should remove (rooms)", async function(){
+			facade.listDatasets().then((list) => {
+				console.log(list);
+			});
 			await facade.addDataset("valid",rooms,InsightDatasetKind.Rooms);
 			const result = await facade.removeDataset("valid");
 			return expect(result).to.deep.equal("valid");
