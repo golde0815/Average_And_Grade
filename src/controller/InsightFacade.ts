@@ -26,15 +26,15 @@ export default class InsightFacade implements IInsightFacade {
 	private datasets: any;
 	constructor() {
 		this.datasets = {};
-		// if (fs.existsSync("./data")) {
-		// 	const files = fs.readdirSync("./data");
-		// 	if (files.length > 0) {
-		// 		for (const file of files) {
-		// 			const dataset = fs.readJsonSync("./data/" + file);
-		// 			this.datasets[dataset.id] = dataset;
-		// 		}
-		// 	}
-		// }
+		if (fs.existsSync("./data")) {
+			const files = fs.readdirSync("./data");
+			if (files.length > 0) {
+				for (const file of files) {
+					const dataset = fs.readJsonSync("./data/" + file);
+					this.datasets[dataset.id] = dataset;
+				}
+			}
+		}
 		console.log("InsightFacadeImpl::init()");
 	}
 
@@ -42,10 +42,10 @@ export default class InsightFacade implements IInsightFacade {
 	public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
 		return new Promise<string[]>((resolve, reject) => {
 			if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
-				reject(new InsightError("Invalid ID"));
+				return reject(new InsightError("Invalid ID"));
 			}
 			if (this.datasets[id]) {
-				reject(new InsightError("Duplicate ID"));
+				return reject(new InsightError("Duplicate ID"));
 			}
 			let dataset: any;
 			let zip = new JSZip();
@@ -114,7 +114,14 @@ export default class InsightFacade implements IInsightFacade {
 		const validSFields: string[] = ["uuid","id","title","instructor","dept","year","avg","pass","fail","audit"];
 		const validRFields: string[] = ["fullname","shortname","number","name","address","lat","lon","seats",
 			"type","furniture","href"];
-		if(query.OPTIONS.COLUMNS && Array.isArray(query.OPTIONS.COLUMNS) && query.OPTIONS.COLUMNS.length > 0) {
+		if (query.TRANSFORMATIONS) {
+			if (query.TRANSFORMATIONS.GROUP && Array.isArray(query.TRANSFORMATIONS.GROUP)
+				&& query.TRANSFORMATIONS.GROUP.length > 0) {
+				queryKey = query.TRANSFORMATIONS.GROUP[0];
+			} else {
+				throw new InsightError("TRANSFORMATION doesn't have a key");
+			}
+		} else if(query.OPTIONS.COLUMNS && Array.isArray(query.OPTIONS.COLUMNS) && query.OPTIONS.COLUMNS.length > 0) {
 			queryKey = query.OPTIONS.COLUMNS[0];
 		} else {
 			throw new InsightError("Invalid option");
@@ -244,5 +251,9 @@ export default class InsightFacade implements IInsightFacade {
 			};
 		});
 		return Promise.resolve(listedResult);
+	}
+
+	public clearDatasets() {
+		this.datasets = {};
 	}
 }
