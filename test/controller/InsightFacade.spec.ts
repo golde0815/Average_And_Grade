@@ -119,6 +119,21 @@ describe("InsightFacade", function () {
 			const result = await facade.addDataset("validthree",sections,InsightDatasetKind.Sections);
 			return expect(result).to.deep.equal(["valid","validtwo","validthree"]);
 		});
+		it("should load dataset on crash", async function () {
+			await facade.addDataset("valid",sections,InsightDatasetKind.Sections);
+			await facade.addDataset("valid2",rooms,InsightDatasetKind.Rooms);
+			let facade2 = new InsightFacade();
+			const result = await facade2.listDatasets();
+			return expect(result).to.deep.equal([{
+				id: "valid",
+				kind: InsightDatasetKind.Sections,
+				numRows: 1198
+			}, {
+				id: "valid2",
+				kind: "rooms",
+				numRows: 364
+			}]);
+		});
 	});
 
 	/*
