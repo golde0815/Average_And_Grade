@@ -67,11 +67,7 @@ export default class InsightFacade implements IInsightFacade {
 					if (!fs.existsSync("./data")) {
 						fs.mkdir("./data");
 					}
-					fs.writeFile("./data/" + id + ".json", datasetString, (err: InsightError) => {
-						if (err) {
-							reject(new InsightError("Error adding file"));
-						}
-					});
+					fs.writeFileSync("./data/" + id + ".json", datasetString);
 					// console.log(this.datasets);
 					// let a = this.datasets.valid.buildings.filter((building: any) => building.rooms.length > 0);
 					// console.log(a);
