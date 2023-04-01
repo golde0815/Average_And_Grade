@@ -1,7 +1,6 @@
 import Server from "../../src/rest/Server";
 import InsightFacade from "../../src/controller/InsightFacade";
-import chaiHttp from "chai-http";
-import chai, {expect, use} from "chai";
+import {expect, use} from "chai";
 import request, {Response} from "supertest";
 import {Application} from "express";
 import * as fs from "fs-extra";
@@ -13,7 +12,6 @@ describe("Server", () => {
 	let server: Server;
 	let express: Application;
 	const SERVER_URL = "http://localhost:4321";
-	use(chaiHttp);
 
 	before(async () => {
 		facade = new InsightFacade();
