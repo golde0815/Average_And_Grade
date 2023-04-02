@@ -88,7 +88,7 @@ export default class Server {
 
 	private getDataset(get: string) {
 		this.express.get(get, (req,res) => {
-			this.facade.listDatasets()
+			return this.facade.listDatasets()
 				.then((value) => {
 					res.status(200);
 					res.send(value);
@@ -106,7 +106,7 @@ export default class Server {
 				res.status(400);
 				res.send("Invalid id");
 			}
-			this.facade.removeDataset(req.params.id)
+			return this.facade.removeDataset(req.params.id)
 				.then((value) => {
 					res.status(200);
 					res.send(value);
@@ -121,7 +121,6 @@ export default class Server {
 					}
 				});
 		});
-		return;
 	}
 
 	private putDataset(put: string) {
@@ -142,7 +141,7 @@ export default class Server {
 				res.send("Invalid data kind");
 			}
 			content = Buffer.from(req.body, "binary").toString("base64");
-			this.facade.addDataset(req.params.id, content, kind)
+			return this.facade.addDataset(req.params.id, content, kind)
 				.then((value) => {
 					res.status(200);
 					res.send(value);
@@ -153,12 +152,11 @@ export default class Server {
 					res.send("addDataset failed");
 				});
 		});
-		return;
 	}
 
 	private postQuery(post: string) {
 		this.express.post(post, (req, res) => {
-			this.facade.performQuery(req.body)
+			return this.facade.performQuery(req.body)
 				.then((value) => {
 					res.status(200);
 					res.send(value);

@@ -43,10 +43,10 @@ describe("Server", () => {
 
 	it("PUT test for courses dataset", () => {
 		console.log("ADD DATASET");
-		const ENDPOINT_URL = "/dataset/veryValidId/sections";
+		const ENDPOINT_URL = "/dataset/sections/sections";
 		try {
 			const ZIP_FILE_DATA = fs.readFileSync("test/resources/archives/pair.zip");
-			return request(express)
+			return request(SERVER_URL)
 				.put(ENDPOINT_URL)
 				.send(ZIP_FILE_DATA)
 				.set("Content-Type", "application/x-zip-compressed")
@@ -58,27 +58,6 @@ describe("Server", () => {
 				.catch((err) => {
 					console.log(err);
 					// some logging here please!
-					expect.fail();
-				});
-		} catch (err) {
-			console.log(err);
-			expect.fail();
-		}
-	});
-
-	it("DELETE test for courses dataset", () => {
-		console.log("DELETE DATASET");
-		const ENDPOINT_URL = "/dataset/veryValidId";
-		try {
-			return request(express)
-				.delete(ENDPOINT_URL)
-				.then((res: Response) => {
-					expect(res.status).to.be.equal(200);
-						// more assertions here
-				})
-				.catch((err) => {
-					console.log(err);
-						// some logging here please!
 					expect.fail();
 				});
 		} catch (err) {
@@ -118,7 +97,7 @@ describe("Server", () => {
 			}
 		};
 		try {
-			return request(express)
+			return request(SERVER_URL)
 				.post(ENDPOINT_URL)
 				.send(query)
 				.set("Accept-Type", "application/json")
@@ -129,6 +108,27 @@ describe("Server", () => {
 				.catch((err) => {
 					console.log(err);
 						// some logging here please!
+					expect.fail();
+				});
+		} catch (err) {
+			console.log(err);
+			expect.fail();
+		}
+	});
+
+	it("DELETE test for courses dataset", () => {
+		console.log("DELETE DATASET");
+		const ENDPOINT_URL = "/dataset/sections";
+		try {
+			return request(SERVER_URL)
+				.delete(ENDPOINT_URL)
+				.then((res: Response) => {
+					expect(res.status).to.be.equal(200);
+					// more assertions here
+				})
+				.catch((err) => {
+					console.log(err);
+					// some logging here please!
 					expect.fail();
 				});
 		} catch (err) {
