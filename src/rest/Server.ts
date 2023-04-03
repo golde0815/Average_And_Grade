@@ -2,18 +2,25 @@ import express, {Application, Request, Response} from "express";
 import * as http from "http";
 import cors from "cors";
 import InsightFacade from "../controller/InsightFacade";
-import {IInsightFacade, InsightDatasetKind, InsightError, NotFoundError} from "../controller/IInsightFacade";
+import {
+	IInsightFacade,
+	InsightDataset,
+	InsightDatasetKind,
+	InsightError,
+	NotFoundError
+} from "../controller/IInsightFacade";
 
 export default class Server {
 	private readonly port: number;
 	private express: Application;
 	private server: http.Server | undefined;
-	private facade: IInsightFacade = new InsightFacade();
+	private static fcd: IInsightFacade;
 
 	constructor(port: number) {
 		console.info(`Server::<init>( ${port} )`);
 		this.port = port;
 		this.express = express();
+		Server.fcd = new InsightFacade();
 
 		this.registerMiddleware();
 		this.registerRoutes();
@@ -86,86 +93,77 @@ export default class Server {
 		this.express.use(cors());
 	}
 
-	private getDataset(get: string) {
-		this.express.get(get, (req,res) => {
-			return this.facade.listDatasets()
-				.then((value) => {
-					res.status(200);
-					res.send(value);
-				})
-				.catch((err) => {
-					res.status(400);
-					res.send("listDataset failed");
-				});
-		});
+	private static getDataset(req: Request, res: Response) {
+		return Server.fcd.listDatasets()
+			.then((value: InsightDataset[]) => {
+				res.status(200).json({result: value});
+			})
+			.catch((err) => {
+				res.status(200).json({result: err});
+			});
 	}
 
-	private deleteDataset(deleted: string) {
-		this.express.delete(deleted, (req, res) => {
-			if (!req.params.id) {
-				res.status(400);
-				res.send("Invalid id");
-			}
-			return this.facade.removeDataset(req.params.id)
-				.then((value) => {
-					res.status(200);
-					res.send(value);
-				})
-				.catch((err) => {
-					if (err instanceof NotFoundError) {
-						res.status(404);
-						res.send("dataset with given ID not found");
-					} else {
-						res.status(400);
-						res.send("listDataset failed");
-					}
-				});
-		});
+	// private getDataset(get: string) {
+	// 	let fcd: IInsightFacade = new InsightFacade();
+	// 	this.express.get(get, (req,res) => {
+	// 		return this.fcd.listDatasets()
+	// 			.then((value) => {
+	// 				res.status(200);
+	// 				res.send(value);
+	// 			})
+	// 			.catch((err) => {
+	// 				res.status(400);
+	// 				res.send("listDataset failed");
+	// 			});
+	// 	});
+	// }
+
+	private static deleteDataset (req: Request, res: Response) {
+		return Server.fcd.removeDataset(req.params.id)
+			.then((value: string) => {
+				res.status(200).json({result: value});
+			})
+			.catch((err) => {
+				if (err instanceof NotFoundError) {
+					res.status(404).json({error: err});
+				} else {
+					res.status(400).json({error: err});
+				}
+			});
 	}
 
-	private putDataset(put: string) {
-		this.express.put(put, (req, res) => {
+	private static putDataset(req: Request, res: Response) {
+		try {
 			let kind: InsightDatasetKind;
 			let content: string;
-			if (!req.params.id) {
-				res.status(400);
-				res.send("Invalid id");
-			}
 			if (req.params.kind === "sections") {
 				kind = InsightDatasetKind.Sections;
 			} else if (req.params.kind === "rooms") {
 				kind = InsightDatasetKind.Rooms;
 			} else {
-				kind = InsightDatasetKind.Rooms;
-				res.status(400);
-				res.send("Invalid data kind");
+				throw new InsightError("Invalid params for kind");
 			}
 			content = Buffer.from(req.body, "binary").toString("base64");
-			return this.facade.addDataset(req.params.id, content, kind)
-				.then((value) => {
-					res.status(200);
-					res.send(value);
-					// res.send(req.params.id);
+			return Server.fcd.addDataset(req.params.id, content, kind)
+				.then((value: string[]) => {
+					res.status(200).json({result: value});
 				})
 				.catch((err) => {
-					res.status(400);
-					res.send("addDataset failed");
+					res.status(400).json({error: err});
 				});
-		});
+		} catch (err) {
+			res.status(400).json({error: err});
+		}
 	}
 
-	private postQuery(post: string) {
-		this.express.post(post, (req, res) => {
-			return this.facade.performQuery(req.body)
-				.then((value) => {
-					res.status(200);
-					res.send(value);
-				})
-				.catch((err) => {
-					res.status(400);
-					res.send("performQuery failed");
-				});
-		});
+	private static postQuery(req: Request, res: Response) {
+		return Server.fcd.performQuery(req.body)
+			.then((value) => {
+				res.status(200).json({result: value});
+			})
+			.catch((err) => {
+				res.status(400).json({error: err});
+			});
 	}
 
 	// Registers all request handlers to routes
@@ -178,10 +176,11 @@ export default class Server {
 		this.express.get("/", (req, res) => {
 			res.send("Hello World!");
 		});
-		this.getDataset("/dataset");
-		this.deleteDataset("/dataset/:id");
-		this.putDataset("/dataset/:id/:kind");
-		this.postQuery("/query");
+		// this.getDataset("/dataset");
+		this.express.get("/dataset", Server.getDataset);
+		this.express.delete("/dataset/:id", Server.deleteDataset);
+		this.express.put("/dataset/:id/:kind", Server.putDataset);
+		this.express.post("/query", Server.postQuery);
 	}
 
 	/**
