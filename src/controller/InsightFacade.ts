@@ -85,6 +85,7 @@ export default class InsightFacade implements IInsightFacade {
 		if (this.datasets[id] === undefined) {
 			return Promise.reject(new NotFoundError("ID not found"));
 		}
+		fs.removeSync("./data/" + id + ".json");
 		delete this.datasets[id];
 		return Promise.resolve(id);
 	}

@@ -13,11 +13,11 @@ describe("Server", () => {
 	let express: Application;
 	const SERVER_URL = "http://localhost:4321";
 
-	before(async () => {
+	before( () => {
 		facade = new InsightFacade();
 		server = new Server(4321);
 		// TODO: start server here once and handle errors properly
-		await server.start().then(() => {
+		return server.start().then(() => {
 			console.log("SERVER START");
 			express = server.getExpress();
 			console.info("App::initServer() - started");
@@ -26,7 +26,7 @@ describe("Server", () => {
 		});
 	});
 
-	after(async () => {
+	after( () => {
 			// TODO: stop server here once!
 		return server.stop();
 	});
