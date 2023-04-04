@@ -158,9 +158,9 @@ export default class Server {
 		this.express.get("/echo/:msg", Server.echo);
 
 		// TODO: your other endpoints should go here
-		this.express.get("/", (req, res) => {
-			res.send("Hello World!");
-		});
+		// this.express.get("/", (req, res) => {
+		// 	res.send("Hello World!");
+		// });
 		// this.getDataset("/dataset");
 		this.express.get("/datasets", Server.getDataset);
 		this.express.delete("/dataset/:id", Server.deleteDataset);
