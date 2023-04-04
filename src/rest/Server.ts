@@ -142,13 +142,17 @@ export default class Server {
 	}
 
 	private static postQuery(req: Request, res: Response) {
-		return Server.fcd.performQuery(req.body)
-			.then((value) => {
-				res.status(200).json({result: value});
-			})
-			.catch((err) => {
-				res.status(400).json({error: err.toString()});
-			});
+		try {
+			return Server.fcd.performQuery(req.body)
+				.then((value) => {
+					res.status(200).json({result: value});
+				})
+				.catch((err) => {
+					res.status(400).json({error: err.toString()});
+				});
+		} catch (err: any) {
+			res.status(400).json({error: err.toString()});
+		}
 	}
 
 	// Registers all request handlers to routes
@@ -158,10 +162,6 @@ export default class Server {
 		this.express.get("/echo/:msg", Server.echo);
 
 		// TODO: your other endpoints should go here
-		// this.express.get("/", (req, res) => {
-		// 	res.send("Hello World!");
-		// });
-		// this.getDataset("/dataset");
 		this.express.get("/datasets", Server.getDataset);
 		this.express.delete("/dataset/:id", Server.deleteDataset);
 		this.express.put("/dataset/:id/:kind", Server.putDataset);
