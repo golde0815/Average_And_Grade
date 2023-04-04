@@ -99,24 +99,9 @@ export default class Server {
 				res.status(200).json({result: value});
 			})
 			.catch((err) => {
-				res.status(200).json({result: err});
+				console.log(err);
 			});
 	}
-
-	// private getDataset(get: string) {
-	// 	let fcd: IInsightFacade = new InsightFacade();
-	// 	this.express.get(get, (req,res) => {
-	// 		return this.fcd.listDatasets()
-	// 			.then((value) => {
-	// 				res.status(200);
-	// 				res.send(value);
-	// 			})
-	// 			.catch((err) => {
-	// 				res.status(400);
-	// 				res.send("listDataset failed");
-	// 			});
-	// 	});
-	// }
 
 	private static deleteDataset (req: Request, res: Response) {
 		return Server.fcd.removeDataset(req.params.id)
@@ -177,7 +162,7 @@ export default class Server {
 			res.send("Hello World!");
 		});
 		// this.getDataset("/dataset");
-		this.express.get("/dataset", Server.getDataset);
+		this.express.get("/datasets", Server.getDataset);
 		this.express.delete("/dataset/:id", Server.deleteDataset);
 		this.express.put("/dataset/:id/:kind", Server.putDataset);
 		this.express.post("/query", Server.postQuery);
