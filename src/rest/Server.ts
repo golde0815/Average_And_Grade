@@ -109,10 +109,10 @@ export default class Server {
 				res.status(200).json({result: value});
 			})
 			.catch((err) => {
-				if (err instanceof NotFoundError) {
-					res.status(404).json({error: err});
+				if (err === NotFoundError) {
+					res.status(404).json({error: err.toString()});
 				} else {
-					res.status(400).json({error: err});
+					res.status(400).json({error: err.toString()});
 				}
 			});
 	}
@@ -134,10 +134,10 @@ export default class Server {
 					res.status(200).json({result: value});
 				})
 				.catch((err) => {
-					res.status(400).json({error: err});
+					res.status(400).json({error: err.toString()});
 				});
-		} catch (err) {
-			res.status(400).json({error: err});
+		} catch (err: any) {
+			res.status(400).json({error: err.toString()});
 		}
 	}
 
@@ -147,7 +147,7 @@ export default class Server {
 				res.status(200).json({result: value});
 			})
 			.catch((err) => {
-				res.status(400).json({error: err});
+				res.status(400).json({error: err.toString()});
 			});
 	}
 
