@@ -79,7 +79,10 @@ export default class InsightFacade implements IInsightFacade {
 	}
 
 	public removeDataset(id: string): Promise<string> {
-		if (id.match(/^\s*$/) || id.search("_") > 0 || id.length === 0) {
+		if (!/^[^_]+$/.test(id)) {
+			return Promise.reject(new InsightError("Invalid ID"));
+		}
+		if (id.match(/^\s*$/) || id.includes("_") || id.length === 0) {
 			return Promise.reject(new InsightError("Invalid ID"));
 		}
 		if (this.datasets[id] === undefined) {
