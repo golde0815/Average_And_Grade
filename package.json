@@ -10,7 +10,7 @@
 	},
 	"dependencies": {
 		"chai-http": "^4.3.0",
-		"cors": "2.8.5",
+		"cors": "^2.8.5",
 		"decimal.js": "10.4.3",
 		"express": "4.18.2",
 		"fs-extra": "11.1.0",

@@ -23,6 +23,7 @@ describe("InsightFacade", function () {
 
 	// Declare datasets used in tests. You should add more datasets like this!
 	let sections: string;
+	let bigsections: string;
 	let rooms: string;
 
 	before(function () {
@@ -33,6 +34,7 @@ describe("InsightFacade", function () {
 	describe("Add/Remove/List Dataset", function () {
 		before(function () {
 			sections = getContentFromArchives("small.zip");
+			bigsections = getContentFromArchives("pair.zip");
 			rooms = getContentFromArchives("campus.zip");
 			console.info(`Before: ${this.test?.parent?.title}`);
 		});
@@ -45,20 +47,20 @@ describe("InsightFacade", function () {
 		});
 
 		afterEach(function() {
-			if (fs.existsSync("./data")) {
-				fs.readdir("./data", (err, files) => {
-					if (err) {
-						throw err;
-					}
-					for (const file of files) {
-						fs.unlink(path.join("./data", file), (error) => {
-							if (error) {
-								throw error;
-							}
-						});
-					}
-				});
-			}
+			// if (fs.existsSync("./data")) {
+			// 	fs.readdir("./data", (err, files) => {
+			// 		if (err) {
+			// 			throw err;
+			// 		}
+			// 		for (const file of files) {
+			// 			fs.unlink(path.join("./data", file), (error) => {
+			// 				if (error) {
+			// 					throw error;
+			// 				}
+			// 			});
+			// 		}
+			// 	});
+			// }
 		});
 		// This is a unit test. You should create more like this!
 		it ("should reject with an empty dataset id", function() {
@@ -95,6 +97,11 @@ describe("InsightFacade", function () {
 		it("should add valid rooms dataset", function(){
 			const result = facade.addDataset("valid",rooms,InsightDatasetKind.Rooms);
 			return expect(result).to.eventually.deep.equal(["valid"]);
+		});
+		it.only("should add two valid datasets", async function(){
+			await facade.addDataset("pair",bigsections,InsightDatasetKind.Sections);
+			const result = await facade.addDataset("campus",rooms,InsightDatasetKind.Rooms);
+			return expect(result).to.deep.equal(["pair","campus"]);
 		});
 		it("should reject an incorrect type (if type is rooms but dataset is sections)", function () {
 			const result = facade.addDataset("valid",sections,InsightDatasetKind.Rooms);
