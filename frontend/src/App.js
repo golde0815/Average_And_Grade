@@ -41,16 +41,43 @@ function getCourseAverage(dept, id) {
 	});
 }
 
+function getRoomAddress(name) {
+	const sname = name.toUpperCase();
+	let query  = {
+		WHERE: {
+			OR: [
+				{IS: {campus_shortname: sname}},
+				{IS: {campus_fullname: name}}
+			]
+		},
+		OPTIONS: {
+			COLUMNS: [
+				"campus_address"
+			]
+		},
+		TRANSFORMATIONS: {
+			GROUP: [
+				"campus_address"
+			],
+			APPLY:[]
+		}
+	};
+	return fetch('http://localhost:4321/query', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify(query)
+	});
+}
+
 function App() {
 	const [showCourses, setShowCourses] = useState(false);
 	const [showBuildings, setShowBuildings] = useState(false);
-	const handleShowCourses = () => {
-		setShowCourses(true);
-		setShowBuildings(false);
-	};
 
 	const [dept, setDept] = useState('');
 	const [id, setId] = useState('');
+	const [building, setBuilding] = useState('');
 	const [results, setResults] = useState([]);
 	const [displayedTitle, setDisplayedTitle] = useState('');
 
@@ -62,8 +89,19 @@ function App() {
 		setId(value);
 	};
 
+	const handleBuildingChange = (value) => {
+		setBuilding(value);
+	};
+
+	const handleShowCourses = () => {
+		setShowCourses(true);
+		setShowBuildings(false);
+	};
+
 	const handleHideCourses = () => {
 		setShowCourses(false);
+		setResults([]);
+		setDisplayedTitle('');
 	};
 
 	const handleShowBuildings = () => {
@@ -73,6 +111,8 @@ function App() {
 
 	const handleHideBuildings = () => {
 		setShowBuildings(false);
+		setResults([]);
+		setDisplayedTitle('');
 	};
 
 	const handleCourseEnter = () => {
@@ -81,10 +121,27 @@ function App() {
 			.then((data) => {
 				setResults(data.result);
 				setDisplayedTitle(`${dept.toUpperCase()} ${id}`);
-				if (results.length === 0) {
-					alert("No results for " + displayedTitle);
-				}
-			});
+				return data.result;
+			}).then((result) => {
+			if (result.length === 0) {
+				alert("No results for \"" + `${dept.toUpperCase()} ${id}` + "\"");
+			}
+		});
+	};
+
+	const handleBuildingEnter = () => {
+		getRoomAddress(building)
+			.then((response) => response.json())
+			.then((data) => {
+				setResults(data.result);
+				return data.result;
+			}).then((result) => {
+			if (result.length === 0) {
+				alert("No results for \"" + `${building}` + "\"");
+			} else {
+				setDisplayedTitle(`${result[0].campus_address}`);
+			}
+		});
 	};
 
 	const courseColumns = [
@@ -120,11 +177,15 @@ function App() {
 						<div style={{display: 'flex', flexDirection: 'column'}}>
 							<div style={{ display: 'flex', alignItems: 'center'}}>
 								<p style={{ marginRight: 10, width: 80, textAlign: 'right'}}>Dept:</p>
-								<AutoComplete placeholder="Enter dept" style={{ width: 400 }} onChange={handleDeptChange}/>
+								<AutoComplete placeholder="Enter dept"
+											  onChange={handleDeptChange}
+											  style={{width: 400}}/>
 							</div>
 							<div style={{display: 'flex', alignItems: 'center', marginTop: -10}}>
 								<p style={{marginRight: 10, width: 80, textAlign: 'right'}}>Course #:</p>
-								<AutoComplete placeholder="Enter #" style={{width: 400}} onChange={handleIdChange}/>
+								<AutoComplete placeholder="Enter #"
+											  onChange={handleIdChange}
+											  style={{width: 400}}/>
 							</div>
 						</div>
 				<Button type="primary"
@@ -150,17 +211,22 @@ function App() {
 				<>
 					<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 						<p style={{ marginRight: 10, width: 80, textAlign: 'right' }}>Building</p>
-						<AutoComplete placeholder="Enter building" style={{ width: 400 }} />
-						<Button type="primary" style={{fontWeight: 'bold', marginLeft: 10, alignSelf: 'center'}}>
+						<AutoComplete placeholder="Enter building name (FULL NAMES ARE CASE SENSITIVE)"
+									  onChange={handleBuildingChange}
+									  style={{width: 400}} />
+						<Button type="primary"
+								onClick={handleBuildingEnter}
+								style={{fontWeight: 'bold', marginLeft: 10, alignSelf: 'center'}}>
 							Enter
 						</Button>
 					</div>
-					<Button
-						type="primary"
-						danger
-						onClick={handleHideBuildings}
-						style={{ fontWeight: 'bold', marginTop: 10}}
-					>
+					{results.length > 0 && (
+						<div style={{maxWidth: 800, margin: "auto"}}>
+							<h3>Address: {displayedTitle}</h3>
+						</div>
+					)}
+					<br/>
+					<Button	type="primary" danger onClick={handleHideBuildings} style={{ fontWeight: 'bold', marginTop: 10}}>
 						Cancel
 					</Button>
 				</>
@@ -171,7 +237,7 @@ function App() {
 						Courses
 					</Button>
 					<Button type="primary" onClick={handleShowBuildings}
-							style={{ fontWeight: 'bold'}}>
+							style={{fontWeight: 'bold'}}>
 						Buildings
 					</Button>
 				</div>
