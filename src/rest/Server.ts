@@ -104,17 +104,21 @@ export default class Server {
 	}
 
 	private static deleteDataset (req: Request, res: Response) {
-		return Server.fcd.removeDataset(req.params.id)
-			.then((value: string) => {
-				res.status(200).json({result: value});
-			})
-			.catch((err) => {
-				if (err === NotFoundError) {
-					res.status(404).json({error: err.toString()});
-				} else {
-					res.status(400).json({error: err.toString()});
-				}
-			});
+		try {
+			return Server.fcd.removeDataset(req.params.id)
+				.then((value: string) => {
+					res.status(200).json({result: value});
+				})
+				.catch((err) => {
+					if (err instanceof NotFoundError) {
+						res.status(404).json({error: err.toString()});
+					} else {
+						res.status(400).json({error: err.toString()});
+					}
+				});
+		} catch (err: any) {
+			res.status(400).json({error: err.toString()});
+		}
 	}
 
 	private static putDataset(req: Request, res: Response) {
