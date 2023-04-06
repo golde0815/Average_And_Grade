@@ -125,6 +125,8 @@ function App() {
 			}).then((result) => {
 			if (result.length === 0) {
 				alert("No results for \"" + `${dept.toUpperCase()} ${id}` + "\"");
+			} else if (result[result.length - 1].pair_year === 1900) {
+				result[result.length - 1].pair_year = 'Overall';
 			}
 		});
 	};
@@ -140,6 +142,7 @@ function App() {
 				alert("No results for \"" + `${building}` + "\"");
 			} else {
 				setDisplayedTitle(`${result[0].campus_address}`);
+				setResults(result);
 			}
 		});
 	};
