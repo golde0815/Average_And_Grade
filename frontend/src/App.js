@@ -124,7 +124,7 @@ function App() {
 				return data.result;
 			}).then((result) => {
 			if (result.length === 0) {
-				alert("No results for \"" + `${dept.toUpperCase()} ${id}` + "\"");
+				alert("INVALID COURSE: No results for \"" + `${dept.toUpperCase()} ${id}` + "\"");
 			} else if (result[result.length - 1].pair_year === 1900) {
 				result[result.length - 1].pair_year = 'Overall';
 			}
@@ -139,7 +139,7 @@ function App() {
 				return data.result;
 			}).then((result) => {
 			if (result.length === 0) {
-				alert("No results for \"" + `${building}` + "\"");
+				alert("INVALID BUILDING NAME: No results for \"" + `${building}` + "\"");
 			} else {
 				setDisplayedTitle(`${result[0].campus_address}`);
 				setResults(result);
